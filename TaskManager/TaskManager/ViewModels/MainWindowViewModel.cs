@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using TaskManager.Services;
@@ -11,6 +12,7 @@ namespace TaskManager.ViewModels
         private readonly PerformanceMetricsHelper performanceMetricsHelper;
         private BaseViewModel currentView;
         private bool isMenuVisible = true;
+        private bool isLoading;
 
         public MainWindowViewModel()
         {
@@ -85,6 +87,21 @@ namespace TaskManager.ViewModels
             }
         }
 
+        public bool IsLoading
+        {
+            get => isLoading;
+            set
+            {
+                if (isLoading == value)
+                {
+                    return;
+                }
+
+                isLoading = value;
+                OnPropertyChanged(nameof(IsLoading));
+            }
+        }
+
         public GridLength MenuColumnWidth => IsMenuVisible ? new GridLength(150) : new GridLength(0);
 
         private void ToggleMenu()
@@ -94,7 +111,15 @@ namespace TaskManager.ViewModels
 
         private RelayCommand<object> Show(Func<BaseViewModel> createViewModel)
         {
-            return new RelayCommand<object>(_ => CurrentView = createViewModel());
+            return new RelayCommand<object>(async _ => await ShowViewAsync(createViewModel));
+        }
+
+        private async Task ShowViewAsync(Func<BaseViewModel> createViewModel)
+        {
+            IsLoading = true;
+            await Task.Delay(200);
+            CurrentView = createViewModel();
+            IsLoading = false;
         }
     }
 }
