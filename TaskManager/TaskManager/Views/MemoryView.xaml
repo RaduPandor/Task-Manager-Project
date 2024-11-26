@@ -1,0 +1,89 @@
+﻿<UserControl x:Class="TaskManager.Views.MemoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:viewmodels="clr-namespace:TaskManager.ViewModels"
+             xmlns:ig="http://schemas.infragistics.com/xaml"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             d:DataContext="{d:DesignInstance Type=viewmodels:MemoryViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="10" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Memory" FontSize="25" Margin="10" HorizontalAlignment="Left" Grid.Column="0"/>
+            <TextBlock Text="{Binding LatestMemoryModel.TotalMemory, StringFormat='{}{0:N1} GB'}" FontSize="15" Margin="10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Column="1"/>
+        </Grid>
+        <lvc:CartesianChart Grid.Row="1" x:Name="CpuUsageChart" Series="{Binding MemoryUsageSeries}">
+            <lvc:CartesianChart.AxisY>
+                <lvc:Axis Title="Memory Usage" MinValue="0" MaxValue="{Binding LatestMemoryModel.TotalMemory, StringFormat='{}{0:N1} GB'}">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="100" />
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisY>
+            <lvc:CartesianChart.AxisX>
+                <lvc:Axis Title="Time (seconds)" MinValue="0" MaxValue="60">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="60" />
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisX>
+        </lvc:CartesianChart>
+        <Grid Grid.Row="2" Margin="0,10,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Vertical" Margin="8,0,10,0">
+                <TextBlock>
+                    <Run Text="In use: " />
+                    <Run Text="{Binding LatestMemoryModel.InUseMemory, StringFormat='{}{0:N1} GB'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Available: " />
+                    <Run Text="{Binding LatestMemoryModel.AvailableMemory, StringFormat='{}{0:N1} GB'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Commited: " />
+                    <Run Text="{Binding LatestMemoryModel.CommittedMemory, StringFormat='{}{0:N1} GB'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Cached: " />
+                    <Run Text="{Binding LatestMemoryModel.CachedMemory, StringFormat='{}{0:N1} GB'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Paged pool: " />
+                    <Run Text="{Binding LatestMemoryModel.PagedPool, StringFormat='{}{0:N1} GB'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Non-paged poll: " />
+                    <Run Text="{Binding LatestMemoryModel.NonPagedPool, StringFormat='{}{0:N0} MB'}" />
+                </TextBlock>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Vertical" Margin="8,0,10,0">
+                <TextBlock>
+                    <Run Text="Speed: " />
+                    <Run Text="{Binding LatestMemoryModel.Speed, StringFormat='{}{0} MT/s'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Slots used: " />
+                    <Run Text="{Binding LatestMemoryModel.SlotsUsed}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Form factor: " />
+                    <Run Text="{Binding LatestMemoryModel.FormFactor}" />
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

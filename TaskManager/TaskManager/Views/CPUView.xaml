@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="TaskManager.Views.CPUView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:viewmodels="clr-namespace:TaskManager.ViewModels"
+             xmlns:ig="http://schemas.infragistics.com/xaml"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             d:DataContext="{d:DesignInstance Type=viewmodels:CPUViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="10" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="CPU" FontSize="25" Margin="10" HorizontalAlignment="Left" Grid.Column="0"/>
+            <TextBlock Text="{Binding LatestCPUModel.CPUName}" FontSize="15" Margin="10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Column="1"/>
+        </Grid>
+        <lvc:CartesianChart Grid.Row="1" x:Name="CpuUsageChart" Series="{Binding CpuUsageSeries}">
+            <lvc:CartesianChart.AxisY>
+                <lvc:Axis Title="CPU Usage (%)" MinValue="0" MaxValue="100">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="100" />
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisY>
+            <lvc:CartesianChart.AxisX>
+                <lvc:Axis Title="Time (seconds)" MinValue="0" MaxValue="60">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="60" />
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisX>
+        </lvc:CartesianChart>
+        <Grid Grid.Row="2" Margin="0,10,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Vertical" Margin="8,0,10,0">
+                <TextBlock>
+                    <Run Text="Utilization: " />
+                    <Run Text="{Binding LatestCPUModel.CpuUsage, StringFormat={}{0}%}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Processes: " />
+                    <Run Text="{Binding LatestCPUModel.Processes}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Threads: " />
+                    <Run Text="{Binding LatestCPUModel.Threads}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Handles: " />
+                    <Run Text="{Binding LatestCPUModel.Handles}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Up time: " />
+                    <Run Text="{Binding LatestCPUModel.UpTime, StringFormat={}{0:g}}" />
+                </TextBlock>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Vertical" Margin="8,0,10,0">
+                <TextBlock>
+                    <Run Text="Base Speed: " />
+                    <Run Text="{Binding LatestCPUModel.BaseSpeed, StringFormat='{}{0} GHz'}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Sockets: " />
+                    <Run Text="{Binding LatestCPUModel.Sockets}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Cores: " />
+                    <Run Text="{Binding LatestCPUModel.Cores}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Logical processors: " />
+                    <Run Text="{Binding LatestCPUModel.LogicalProcessors}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="Virtualization: " />
+                    <Run Text="{Binding LatestCPUModel.Virtualization}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="L1 cache: " />
+                    <Run Text="{Binding LatestCPUModel.L1Cache, StringFormat={}{0} KB}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="L2 cache: " />
+                    <Run Text="{Binding LatestCPUModel.L2Cache, StringFormat={}{0:F1} MB}" />
+                </TextBlock>
+                <TextBlock>
+                    <Run Text="L3 cache: " />
+                    <Run Text="{Binding LatestCPUModel.L3Cache, StringFormat={}{0:F1} MB}" />
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
