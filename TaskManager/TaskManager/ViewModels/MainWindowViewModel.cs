@@ -14,10 +14,10 @@ namespace TaskManager.ViewModels
         private bool isMenuVisible = true;
         private bool isLoading;
 
-        public MainWindowViewModel()
+        public MainWindowViewModel(PerformanceMetricsHelper performanceMetricsHelper, WindowCommands windowCommands)
         {
-            performanceMetricsHelper = new PerformanceMetricsHelper(new NativeMethodsService());
-            windowCommands = new WindowCommands();
+            this.performanceMetricsHelper = performanceMetricsHelper;
+            this.windowCommands = windowCommands;
             MinimizeCommand = windowCommands.MinimizeCommand;
             MaximizeCommand = windowCommands.MaximizeCommand;
             CloseCommand = windowCommands.CloseCommand;

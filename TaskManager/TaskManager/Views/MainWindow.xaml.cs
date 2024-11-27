@@ -1,5 +1,6 @@
 ﻿namespace TaskManager
 {
+    using Microsoft.Extensions.DependencyInjection;
     using System.Windows;
     using TaskManager.ViewModels;
 
@@ -8,7 +9,7 @@
         public MainWindow()
         {
             this.InitializeComponent();
-            this.DataContext = new MainWindowViewModel();
+            this.DataContext = App.ServiceProvider.GetRequiredService<MainWindowViewModel>();
         }
     }
 }
