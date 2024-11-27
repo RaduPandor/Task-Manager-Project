@@ -117,7 +117,7 @@ namespace TaskManager.ViewModels
         private async Task ShowViewAsync(Func<BaseViewModel> createViewModel)
         {
             IsLoading = true;
-            await Task.Delay(200);
+            await Task.Delay(50);
             CurrentView = createViewModel();
             IsLoading = false;
         }

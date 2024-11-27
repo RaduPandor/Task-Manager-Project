@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:TaskManager.ViewModels"
         xmlns:views="clr-namespace:TaskManager.Views"
-        xmlns:local="clr-namespace:TaskManager.Services"
+        xmlns:local="clr-namespace:TaskManager.Services" xmlns:wpfAnimatedGif="http://wpfanimatedgif.codeplex.com"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel, IsDesignTimeCreatable=True}"
         Title="Task Manager"
@@ -118,10 +118,14 @@
             </StackPanel>
             <Grid Background="White" Grid.Column="2">
                 <ContentControl Content="{Binding CurrentView}"/>
-                <Grid x:Name="LoadingSpinner" VerticalAlignment="Center" HorizontalAlignment="Center"
+                <Grid x:Name="LoadingSpinner" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                     Visibility="{Binding IsLoading, Converter={StaticResource VisibilityConverter}}">
-                    <Grid Background="Gray" Opacity="0.6" Width="200" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Ellipse Width="40" Height="40" Stroke="Blue" StrokeThickness="5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Grid Background="White" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <Image HorizontalAlignment="Center" VerticalAlignment="Center" Width="40" Height="40">
+                            <wpfAnimatedGif:ImageBehavior.AnimatedSource>
+                                <BitmapImage UriSource="/Resources/Icons/LoadingGif.gif"/>
+                            </wpfAnimatedGif:ImageBehavior.AnimatedSource>
+                        </Image>
                     </Grid>
                 </Grid>
             </Grid>

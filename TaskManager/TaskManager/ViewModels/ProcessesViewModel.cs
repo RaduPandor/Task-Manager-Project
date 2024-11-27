@@ -87,7 +87,7 @@ namespace TaskManager.ViewModels
             {
                 tasks.Add(Task.Run(
                     async () =>
-                {
+                    {
                     if (token.IsCancellationRequested)
                     {
                         return;
