@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace TaskManager.Services
 {
-    public class WindowCommands
+    public class WindowCommands : IWindowCommands
     {
         public WindowCommands()
         {

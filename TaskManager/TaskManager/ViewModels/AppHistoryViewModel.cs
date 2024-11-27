@@ -10,7 +10,7 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class AppHistoryViewModel : BaseViewModel
+    public class AppHistoryViewModel : BaseViewModel, ILoadableViewModel
     {
         private readonly PerformanceMetricsHelper performanceMetricsHelper;
 
@@ -18,12 +18,11 @@ namespace TaskManager.ViewModels
         {
             this.performanceMetricsHelper = performanceMetricsHelper;
             AppHistory = new ObservableCollection<AppHistoryModel>();
-            LoadAppHistoryAsync();
         }
 
         public ObservableCollection<AppHistoryModel> AppHistory { get; }
 
-        private async Task LoadAppHistoryAsync()
+        public async Task LoadDataAsync()
         {
             var apps = Process.GetProcesses()
                               .Where(p => p.MainWindowHandle != IntPtr.Zero)

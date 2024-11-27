@@ -12,10 +12,10 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class DetailsViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class DetailsViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
     {
-        private readonly CancellationTokenSource cancellationTokenSource;
         private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private CancellationTokenSource cancellationTokenSource;
         private bool disposed;
         private ICollectionView processesView;
 
@@ -25,8 +25,6 @@ namespace TaskManager.ViewModels
             Processes = new ObservableCollection<DetailsModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
             ProcessesView.SortDescriptions.Add(new SortDescription(nameof(DetailsModel.CpuUsage), ListSortDirection.Descending));
-            cancellationTokenSource = new CancellationTokenSource();
-            LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
         }
 
         ~DetailsViewModel()
@@ -61,6 +59,12 @@ namespace TaskManager.ViewModels
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public async Task LoadDataAsync()
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+            await LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -146,7 +150,7 @@ namespace TaskManager.ViewModels
 
                 try
                 {
-                    await Task.Delay(1000, token);
+                    await Task.Delay(2000, token);
                 }
                 catch (TaskCanceledException)
                 {

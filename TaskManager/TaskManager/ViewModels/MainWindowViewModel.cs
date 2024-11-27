@@ -14,22 +14,22 @@ namespace TaskManager.ViewModels
         private bool isMenuVisible = true;
         private bool isLoading;
 
-        public MainWindowViewModel(PerformanceMetricsHelper performanceMetricsHelper, WindowCommands windowCommands)
+        public MainWindowViewModel(IPerformanceMetricsHelper performanceMetricsHelper, IWindowCommands windowCommands)
         {
-            this.performanceMetricsHelper = performanceMetricsHelper;
-            this.windowCommands = windowCommands;
+            this.performanceMetricsHelper = (PerformanceMetricsHelper)performanceMetricsHelper;
+            this.windowCommands = (WindowCommands)windowCommands;
             MinimizeCommand = windowCommands.MinimizeCommand;
             MaximizeCommand = windowCommands.MaximizeCommand;
             CloseCommand = windowCommands.CloseCommand;
             DragMoveCommand = windowCommands.DragMoveCommand;
             ToggleMenuCommand = new RelayCommand<object>(param => ToggleMenu());
-            ShowProcesses = Show(() => new ProcessesViewModel(performanceMetricsHelper));
+            ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsHelper));
             ShowPerformance = Show(() => new PerformanceViewModel());
-            ShowDetails = Show(() => new DetailsViewModel(performanceMetricsHelper));
+            ShowDetails = Show(() => new DetailsViewModel(this.performanceMetricsHelper));
             ShowServices = Show(() => new ServicesViewModel());
             ShowStartup = Show(() => new StartupViewModel());
-            ShowAppHistory = Show(() => new AppHistoryViewModel(performanceMetricsHelper));
-            ShowUsers = Show(() => new UsersViewModel(performanceMetricsHelper));
+            ShowAppHistory = Show(() => new AppHistoryViewModel(this.performanceMetricsHelper));
+            ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsHelper));
         }
 
         public ICommand MinimizeCommand { get; }
@@ -117,8 +117,12 @@ namespace TaskManager.ViewModels
         private async Task ShowViewAsync(Func<BaseViewModel> createViewModel)
         {
             IsLoading = true;
-            await Task.Delay(50);
             CurrentView = createViewModel();
+            if (CurrentView is ILoadableViewModel loadableViewModel)
+            {
+                await loadableViewModel.LoadDataAsync();
+            }
+
             IsLoading = false;
         }
     }

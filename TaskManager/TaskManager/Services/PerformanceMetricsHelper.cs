@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TaskManager.Services
 {
-    public class PerformanceMetricsHelper
+    public class PerformanceMetricsHelper : IPerformanceMetricsHelper
     {
         private const uint Token = 0x0008;
         private const uint TokenUser = 1;
@@ -19,61 +19,68 @@ namespace TaskManager.Services
 
         public async Task<double> GetCpuUsageAsync(Process process)
         {
-            TimeSpan startCpuUsage = process.TotalProcessorTime;
-            DateTime startTime = DateTime.UtcNow;
-            await Task.Delay(500);
-            TimeSpan endCpuUsage = process.TotalProcessorTime;
-            DateTime endTime = DateTime.UtcNow;
-            double cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
-            double totalMsPassed = (endTime - startTime).TotalMilliseconds;
-            double cpuUsageTotal = (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
-            return Math.Round(cpuUsageTotal, 1);
+            return await Task.Run(async () =>
+            {
+                TimeSpan startCpuUsage = process.TotalProcessorTime;
+                DateTime startTime = DateTime.UtcNow;
+                await Task.Delay(50);
+                TimeSpan endCpuUsage = process.TotalProcessorTime;
+                DateTime endTime = DateTime.UtcNow;
+                double cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
+                double totalMsPassed = (endTime - startTime).TotalMilliseconds;
+                double cpuUsageTotal = (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
+                return Math.Round(cpuUsageTotal, 1);
+            });
         }
 
         public async Task<double> GetDiskUsageAsync(Process process)
         {
-            try
+            return await Task.Run(async () =>
             {
-                using PerformanceCounter diskReadCounter = new ("Process", "IO Read Bytes/sec", process.ProcessName, true);
-                using PerformanceCounter diskWriteCounter = new ("Process", "IO Write Bytes/sec", process.ProcessName, true);
-                diskReadCounter.NextValue();
-                diskWriteCounter.NextValue();
-                await Task.Delay(100);
-                float diskReads = diskReadCounter.NextValue();
-                float diskWrites = diskWriteCounter.NextValue();
-                return Math.Round((diskReads + diskWrites) / (1024.0 * 1024.0), 1);
-            }
-            catch (InvalidOperationException)
-            {
-                return 0;
-            }
+                try
+                {
+                    using PerformanceCounter diskReadCounter = new ("Process", "IO Read Bytes/sec", process.ProcessName, true);
+                    using PerformanceCounter diskWriteCounter = new ("Process", "IO Write Bytes/sec", process.ProcessName, true);
+                    diskReadCounter.NextValue();
+                    diskWriteCounter.NextValue();
+                    float diskReads = diskReadCounter.NextValue();
+                    float diskWrites = diskWriteCounter.NextValue();
+                    return Math.Round((diskReads + diskWrites) / (1024.0 * 1024.0), 1);
+                }
+                catch (InvalidOperationException)
+                {
+                    return 0;
+                }
+            });
         }
 
         public async Task<double> GetNetworkUsageAsync()
         {
-            try
+            return await Task.Run(async () =>
             {
-                string[] networkAdapters = new PerformanceCounterCategory("Network Interface").GetInstanceNames();
-                double totalSent = 0;
-                double totalReceived = 0;
-
-                foreach (string adapter in networkAdapters)
+                try
                 {
-                    using PerformanceCounter networkSentCounter = new ("Network Interface", "Bytes Sent/sec", adapter);
-                    using PerformanceCounter networkReceivedCounter = new ("Network Interface", "Bytes Received/sec", adapter);
-                    networkSentCounter.NextValue();
-                    networkReceivedCounter.NextValue();
-                    await Task.Delay(100);
-                    totalSent += networkSentCounter.NextValue();
-                    totalReceived += networkReceivedCounter.NextValue();
-                }
+                    string[] networkAdapters = new PerformanceCounterCategory("Network Interface").GetInstanceNames();
+                    double totalSent = 0;
+                    double totalReceived = 0;
 
-                return Math.Round((totalSent + totalReceived) / (1024.0 * 1024.0), 1);
-            }
-            catch (InvalidOperationException)
-            {
-                return 0;
-            }
+                    foreach (string adapter in networkAdapters)
+                    {
+                        using PerformanceCounter networkSentCounter = new ("Network Interface", "Bytes Sent/sec", adapter);
+                        using PerformanceCounter networkReceivedCounter = new ("Network Interface", "Bytes Received/sec", adapter);
+                        networkSentCounter.NextValue();
+                        networkReceivedCounter.NextValue();
+                        totalSent += networkSentCounter.NextValue();
+                        totalReceived += networkReceivedCounter.NextValue();
+                    }
+
+                    return Math.Round((totalSent + totalReceived) / (1024.0 * 1024.0), 1);
+                }
+                catch (InvalidOperationException)
+                {
+                    return 0;
+                }
+            });
         }
 
         public string GetProcessStatus(Process process)

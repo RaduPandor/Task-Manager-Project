@@ -12,9 +12,9 @@ namespace TaskManager
         {
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<INativeMethodsService, NativeMethodsService>();
-            serviceCollection.AddSingleton<PerformanceMetricsHelper>();
+            serviceCollection.AddSingleton<IWindowCommands, WindowCommands>();
+            serviceCollection.AddSingleton<IPerformanceMetricsHelper, PerformanceMetricsHelper>();
             serviceCollection.AddSingleton<MainWindowViewModel>();
-            serviceCollection.AddSingleton<WindowCommands>();
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 

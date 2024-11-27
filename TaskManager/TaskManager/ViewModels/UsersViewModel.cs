@@ -11,7 +11,7 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class UsersViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class UsersViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
     {
         private readonly PerformanceMetricsHelper performanceMetricsHelper;
         private CancellationTokenSource cancellationTokenSource;
@@ -24,7 +24,6 @@ namespace TaskManager.ViewModels
             Users = new ObservableCollection<UsersModel>();
             UsersView = CollectionViewSource.GetDefaultView(Users);
             cancellationTokenSource = new CancellationTokenSource();
-            LoadUsersAsync(cancellationTokenSource.Token);
         }
 
         public ObservableCollection<UsersModel> Users { get; }
@@ -50,6 +49,12 @@ namespace TaskManager.ViewModels
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public async Task LoadDataAsync()
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+            await LoadUsersAsync(cancellationTokenSource.Token).ConfigureAwait(false);
         }
 
         protected virtual void Dispose(bool disposing)

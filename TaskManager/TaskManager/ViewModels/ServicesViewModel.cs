@@ -6,20 +6,20 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 using TaskManager.Models;
+using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class ServicesViewModel : BaseViewModel
+    public class ServicesViewModel : BaseViewModel, ILoadableViewModel
     {
         public ServicesViewModel()
         {
             Services = new ObservableCollection<ServicesModel>();
-            LoadServicesAsync();
         }
 
         public ObservableCollection<ServicesModel> Services { get; }
 
-        private async Task LoadServicesAsync()
+        public async Task LoadDataAsync()
         {
             var servicesList = new List<ServicesModel>();
             var tasks = ServiceController.GetServices().Select(async service =>

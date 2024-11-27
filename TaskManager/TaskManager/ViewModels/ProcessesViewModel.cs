@@ -12,10 +12,10 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class ProcessesViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class ProcessesViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
     {
         private readonly PerformanceMetricsHelper performanceMetricsHelper;
-        private readonly CancellationTokenSource cancellationTokenSource;
+        private CancellationTokenSource cancellationTokenSource;
         private bool disposed;
         private ICollectionView processesView;
 
@@ -25,7 +25,6 @@ namespace TaskManager.ViewModels
             Processes = new ObservableCollection<ProcessModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
             cancellationTokenSource = new CancellationTokenSource();
-            LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
         }
 
         ~ProcessesViewModel()
@@ -62,6 +61,12 @@ namespace TaskManager.ViewModels
             GC.SuppressFinalize(this);
         }
 
+        public async Task LoadDataAsync()
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+            await LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (disposed)
@@ -81,13 +86,11 @@ namespace TaskManager.ViewModels
         private async Task LoadProcessesAsync(CancellationToken token)
         {
             var processes = Process.GetProcesses();
-            var tasks = new List<Task>();
 
-            foreach (var process in processes)
+            await Task.Run(() =>
             {
-                tasks.Add(Task.Run(
-                    async () =>
-                    {
+                Parallel.ForEach(processes, process =>
+                {
                     if (token.IsCancellationRequested)
                     {
                         return;
@@ -105,10 +108,8 @@ namespace TaskManager.ViewModels
                     };
 
                     App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
-                }, token));
-            }
-
-            await Task.WhenAll(tasks);
+                });
+            });
 
             foreach (var processModel in Processes)
             {
@@ -151,7 +152,7 @@ namespace TaskManager.ViewModels
 
                 try
                 {
-                    await Task.Delay(1000, token);
+                    await Task.Delay(2000, token);
                 }
                 catch (TaskCanceledException)
                 {

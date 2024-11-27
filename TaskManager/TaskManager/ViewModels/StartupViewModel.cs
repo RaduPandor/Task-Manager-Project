@@ -6,20 +6,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using TaskManager.Models;
+using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class StartupViewModel : BaseViewModel
+    public class StartupViewModel : BaseViewModel, ILoadableViewModel
     {
         public StartupViewModel()
         {
             StartupPrograms = new ObservableCollection<StartupModel>();
-            LoadStartupProgramsAsync();
         }
 
         public ObservableCollection<StartupModel> StartupPrograms { get; }
 
-        private async Task LoadStartupProgramsAsync()
+        public async Task LoadDataAsync()
         {
             await Task.Run(() =>
             {
