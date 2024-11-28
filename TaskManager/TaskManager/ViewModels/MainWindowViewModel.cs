@@ -6,7 +6,7 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class MainWindowViewModel : BaseViewModel
+    public class MainWindowViewModel : BaseViewModel, IMainWindowViewModel
     {
         private readonly WindowCommands windowCommands;
         private readonly PerformanceMetricsHelper performanceMetricsHelper;

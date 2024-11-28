@@ -14,7 +14,7 @@ namespace TaskManager
             serviceCollection.AddSingleton<INativeMethodsService, NativeMethodsService>();
             serviceCollection.AddSingleton<IWindowCommands, WindowCommands>();
             serviceCollection.AddSingleton<IPerformanceMetricsHelper, PerformanceMetricsHelper>();
-            serviceCollection.AddSingleton<MainWindowViewModel>();
+            serviceCollection.AddSingleton<IMainWindowViewModel, MainWindowViewModel>();
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 
