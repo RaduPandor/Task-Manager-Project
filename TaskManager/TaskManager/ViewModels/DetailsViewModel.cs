@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace TaskManager.ViewModels
     {
         private readonly PerformanceMetricsService performanceMetricsHelper;
         private ICollectionView processesView;
+        private Dictionary<int, Process> cachedProcesses;
 
         public DetailsViewModel(PerformanceMetricsService performanceMetricsHelper)
         {
@@ -21,6 +23,7 @@ namespace TaskManager.ViewModels
             Processes = new ObservableCollection<DetailsModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
             ProcessesView.SortDescriptions.Add(new SortDescription(nameof(DetailsModel.CpuUsage), ListSortDirection.Descending));
+            cachedProcesses = new Dictionary<int, Process>();
         }
 
         public ObservableCollection<DetailsModel> Processes { get; }
@@ -38,6 +41,7 @@ namespace TaskManager.ViewModels
         public void OnNavigatedFrom()
         {
             Processes.Clear();
+            cachedProcesses.Clear();
         }
 
         public async Task OnNavigatedToAsync()
@@ -47,8 +51,10 @@ namespace TaskManager.ViewModels
 
         private async Task LoadProcessesAsync()
         {
-            var processes = Process.GetProcesses();
-            var tasks = processes.Select(async process =>
+            cachedProcesses = Process.GetProcesses()
+                                      .ToDictionary(p => p.Id, p => p);
+
+            var tasks = cachedProcesses.Values.Select(async process =>
             {
                 var processModel = new DetailsModel
                 {
@@ -75,9 +81,7 @@ namespace TaskManager.ViewModels
 
         private async Task UpdateProcessMetricsPeriodicallyAsync(DetailsModel processModel)
         {
-            var process = Process.GetProcesses().FirstOrDefault(p => p.Id == processModel.Id);
-
-            if (process?.HasExited != false)
+            if (!cachedProcesses.TryGetValue(processModel.Id, out var process))
             {
                 return;
             }
@@ -106,7 +110,7 @@ namespace TaskManager.ViewModels
             }
             catch (TaskCanceledException)
             {
-                throw new NotImplementedException();
+                return;
             }
         }
 
@@ -124,9 +128,9 @@ namespace TaskManager.ViewModels
             {
                 return "Process exited";
             }
-            catch (Exception)
+            catch (UnauthorizedAccessException)
             {
-                throw new NotImplementedException();
+                return "Access denied";
             }
         }
     }

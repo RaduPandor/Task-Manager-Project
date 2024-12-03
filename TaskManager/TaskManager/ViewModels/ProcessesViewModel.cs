@@ -18,12 +18,14 @@ namespace TaskManager.ViewModels
         private CancellationTokenSource cancellationTokenSource;
         private bool disposed;
         private ICollectionView processesView;
+        private Dictionary<int, Process> cachedProcesses;
 
         public ProcessesViewModel(PerformanceMetricsService performanceMetricsHelper)
         {
             this.performanceMetricsHelper = performanceMetricsHelper;
             Processes = new ObservableCollection<ProcessModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
+            cachedProcesses = new Dictionary<int, Process>();
         }
 
         public ObservableCollection<ProcessModel> Processes { get; }
@@ -68,6 +70,7 @@ namespace TaskManager.ViewModels
                 cancellationTokenSource?.Dispose();
                 cancellationTokenSource = null;
                 Processes.Clear();
+                cachedProcesses.Clear();
             }
 
             disposed = true;
@@ -75,11 +78,12 @@ namespace TaskManager.ViewModels
 
         private async Task LoadProcessesAsync(CancellationToken token)
         {
-            var processes = Process.GetProcesses();
+            cachedProcesses = Process.GetProcesses()
+                                      .ToDictionary(p => p.Id, p => p);
 
             await Task.Run(() =>
             {
-                Parallel.ForEach(processes, process =>
+                Parallel.ForEach(cachedProcesses.Values, process =>
                 {
                     if (token.IsCancellationRequested)
                     {
@@ -116,8 +120,7 @@ namespace TaskManager.ViewModels
 
         private async Task UpdateProcessMetricsAsync(ProcessModel processModel, CancellationToken token)
         {
-            var process = Process.GetProcesses().FirstOrDefault(p => p.Id == processModel.Id);
-            if (process == null)
+            if (!cachedProcesses.TryGetValue(processModel.Id, out var process))
             {
                 return;
             }
