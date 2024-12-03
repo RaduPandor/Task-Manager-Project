@@ -47,13 +47,9 @@ namespace TaskManager.Services
                     float diskWrites = diskWriteCounter.NextValue();
                     return Math.Round((diskReads + diskWrites) / (1024.0 * 1024.0), 1);
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex)
                 {
                     return 0;
-                }
-                catch (Exception)
-                {
-                    throw new NotImplementedException();
                 }
             });
         }
@@ -80,13 +76,9 @@ namespace TaskManager.Services
 
                     return Math.Round((totalSent + totalReceived) / (1024.0 * 1024.0), 1);
                 }
-                catch (InvalidOperationException)
-                {
-                    return 0;
-                }
                 catch (Exception)
                 {
-                    throw new NotImplementedException();
+                    return 0;
                 }
             });
         }
@@ -156,13 +148,9 @@ namespace TaskManager.Services
             {
                 return process.PriorityClass == ProcessPriorityClass.BelowNormal;
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
-            {
-                return false;
-            }
             catch (Exception)
             {
-                throw new NotImplementedException();
+                return false;
             }
         }
 

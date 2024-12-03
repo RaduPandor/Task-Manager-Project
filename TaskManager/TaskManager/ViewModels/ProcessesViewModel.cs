@@ -148,9 +148,9 @@ namespace TaskManager.ViewModels
                 {
                     break;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    throw new NotImplementedException();
+                    break;
                 }
             }
         }
