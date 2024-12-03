@@ -5,7 +5,6 @@ namespace TaskManager.Models
     public class ProcessModel : BaseViewModel
     {
         private string name;
-        private string status;
         private double cpuUsage;
         private double memoryUsage;
         private double diskUsage;
@@ -26,21 +25,6 @@ namespace TaskManager.Models
 
                 name = value;
                 OnPropertyChanged(nameof(Name));
-            }
-        }
-
-        public string Status
-        {
-            get => status;
-            set
-            {
-                if (status == value)
-                {
-                    return;
-                }
-
-                status = value;
-                OnPropertyChanged(nameof(Status));
             }
         }
 

@@ -86,16 +86,20 @@ namespace TaskManager.ViewModels
                         return;
                     }
 
-                    var processModel = new ProcessModel
+                    var processModel = new ProcessModel();
+                    try
                     {
-                        Name = process.ProcessName,
-                        Id = process.Id,
-                        Status = performanceMetricsHelper.GetProcessStatus(process),
-                        CpuUsage = 0,
-                        MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1),
-                        NetworkUsage = 0,
-                        DiskUsage = 0
-                    };
+                        processModel.Name = process.ProcessName;
+                        processModel.Id = process.Id;
+                        processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                        processModel.CpuUsage = 0;
+                        processModel.NetworkUsage = 0;
+                        processModel.DiskUsage = 0;
+                    }
+                    catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+                    {
+                        return;
+                    }
 
                     App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
                 });
@@ -148,7 +152,7 @@ namespace TaskManager.ViewModels
                 {
                     break;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
                 {
                     break;
                 }

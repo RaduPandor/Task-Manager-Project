@@ -19,7 +19,7 @@ namespace TaskManager.Services
 
         public async Task<double> GetCpuUsageAsync(Process process)
         {
-            return await Task.Run(async () =>
+            try
             {
                 TimeSpan startCpuUsage = process.TotalProcessorTime;
                 DateTime startTime = DateTime.UtcNow;
@@ -30,72 +30,55 @@ namespace TaskManager.Services
                 double totalMsPassed = (endTime - startTime).TotalMilliseconds;
                 double cpuUsageTotal = (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
                 return Math.Round(cpuUsageTotal, 1);
-            });
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return 0;
+            }
         }
 
         public async Task<double> GetDiskUsageAsync(Process process)
         {
-            return await Task.Run(async () =>
+            try
             {
-                try
-                {
-                    using PerformanceCounter diskReadCounter = new ("Process", "IO Read Bytes/sec", process.ProcessName, true);
-                    using PerformanceCounter diskWriteCounter = new ("Process", "IO Write Bytes/sec", process.ProcessName, true);
-                    diskReadCounter.NextValue();
-                    diskWriteCounter.NextValue();
-                    float diskReads = diskReadCounter.NextValue();
-                    float diskWrites = diskWriteCounter.NextValue();
-                    return Math.Round((diskReads + diskWrites) / (1024.0 * 1024.0), 1);
-                }
-                catch (Exception ex)
-                {
-                    return 0;
-                }
-            });
+                using PerformanceCounter diskReadCounter = new ("Process", "IO Read Bytes/sec", process.ProcessName, true);
+                using PerformanceCounter diskWriteCounter = new ("Process", "IO Write Bytes/sec", process.ProcessName, true);
+                diskReadCounter.NextValue();
+                diskWriteCounter.NextValue();
+                float diskReads = diskReadCounter.NextValue();
+                float diskWrites = diskWriteCounter.NextValue();
+                return Math.Round((diskReads + diskWrites) / (1024.0 * 1024.0), 1);
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return 0;
+            }
         }
 
         public async Task<double> GetNetworkUsageAsync()
         {
-            return await Task.Run(async () =>
+            try
             {
-                try
+                string[] networkAdapters = new PerformanceCounterCategory("Network Interface").GetInstanceNames();
+                double totalSent = 0;
+                double totalReceived = 0;
+
+                foreach (string adapter in networkAdapters)
                 {
-                    string[] networkAdapters = new PerformanceCounterCategory("Network Interface").GetInstanceNames();
-                    double totalSent = 0;
-                    double totalReceived = 0;
-
-                    foreach (string adapter in networkAdapters)
-                    {
-                        using PerformanceCounter networkSentCounter = new ("Network Interface", "Bytes Sent/sec", adapter);
-                        using PerformanceCounter networkReceivedCounter = new ("Network Interface", "Bytes Received/sec", adapter);
-                        networkSentCounter.NextValue();
-                        networkReceivedCounter.NextValue();
-                        totalSent += networkSentCounter.NextValue();
-                        totalReceived += networkReceivedCounter.NextValue();
-                    }
-
-                    return Math.Round((totalSent + totalReceived) / (1024.0 * 1024.0), 1);
+                    using PerformanceCounter networkSentCounter = new ("Network Interface", "Bytes Sent/sec", adapter);
+                    using PerformanceCounter networkReceivedCounter = new ("Network Interface", "Bytes Received/sec", adapter);
+                    networkSentCounter.NextValue();
+                    networkReceivedCounter.NextValue();
+                    totalSent += networkSentCounter.NextValue();
+                    totalReceived += networkReceivedCounter.NextValue();
                 }
-                catch (Exception)
-                {
-                    return 0;
-                }
-            });
-        }
 
-        public string GetProcessStatus(Process process)
-        {
-            if (IsProcessSuspended(process))
-            {
-                return "Suspended";
+                return Math.Round((totalSent + totalReceived) / (1024.0 * 1024.0), 1);
             }
-
-            if (IsProcessInEfficiencyMode(process))
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
-                return "Efficiency mode";
+                return 0;
             }
-
-            return " ";
         }
 
         public async Task<string> GetProcessOwnerAsync(int processId)
@@ -111,6 +94,10 @@ namespace TaskManager.Services
                 try
                 {
                     return GetOwnerFromToken(processHandle);
+                }
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+                {
+                    return " ";
                 }
                 finally
                 {
@@ -131,26 +118,13 @@ namespace TaskManager.Services
             {
                 return GetOwnerFromToken(processHandle);
             }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return " ";
+            }
             finally
             {
                 nativeMethodsService.CloseHandle(processHandle);
-            }
-        }
-
-        private static bool IsProcessSuspended(Process process)
-        {
-            return false;
-        }
-
-        private static bool IsProcessInEfficiencyMode(Process process)
-        {
-            try
-            {
-                return process.PriorityClass == ProcessPriorityClass.BelowNormal;
-            }
-            catch (Exception)
-            {
-                return false;
             }
         }
 
@@ -165,6 +139,10 @@ namespace TaskManager.Services
             try
             {
                 return ResolveTokenUser(tokenHandle);
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return " ";
             }
             finally
             {
@@ -184,6 +162,10 @@ namespace TaskManager.Services
                     var tokenUser = (NativeMethods.TOKEN_USER)Marshal.PtrToStructure(tokenInfo, typeof(NativeMethods.TOKEN_USER));
                     return nativeMethodsService.LookupAccountName(tokenUser.User.Sid);
                 }
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return " ";
             }
             finally
             {

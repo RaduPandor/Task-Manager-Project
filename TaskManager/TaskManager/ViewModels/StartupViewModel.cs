@@ -102,10 +102,6 @@ namespace TaskManager.ViewModels
             {
                 return string.Empty;
             }
-            catch (Exception)
-            {
-                throw new NotImplementedException();
-            }
 
             return string.Empty;
         }

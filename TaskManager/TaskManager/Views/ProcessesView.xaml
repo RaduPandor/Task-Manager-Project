@@ -14,7 +14,6 @@
         <DataGrid ItemsSource="{Binding Processes}" Style="{StaticResource MainDataGrid}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
                 <DataGridTextColumn Header="CPU" Binding="{Binding CpuUsage, StringFormat={}{0} %}" Width="70">
                     <DataGridTextColumn.ElementStyle>
                         <StaticResource ResourceKey="RightAlignedTextBlock"/>

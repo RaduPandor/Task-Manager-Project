@@ -17,7 +17,6 @@
                   RowDetailsVisibilityMode="VisibleWhenSelected" Grid.Row="1">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="User" Binding="{Binding DisplayName}" Width="150"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
                 <DataGridTextColumn Header="CPU" Binding="{Binding TotalCpuUsage, StringFormat={}{0:N1} %}" Width="70"/>
                 <DataGridTextColumn Header="Memory" Binding="{Binding TotalMemoryUsage, StringFormat={}{0:N1} MB}" Width="90"/>
                 <DataGridTextColumn Header="Disk" Binding="{Binding TotalDiskUsage, StringFormat={}{0:N1} MB/s}" Width="70"/>
@@ -31,7 +30,6 @@
                                   VerticalAlignment="Stretch">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Binding="{Binding Name}" Width="150"/>
-                                <DataGridTextColumn Binding="{Binding Status}" Width="100"/>
                                 <DataGridTextColumn Binding="{Binding CpuUsage, StringFormat={}{0:N1} %}" Width="70"/>
                                 <DataGridTextColumn Binding="{Binding MemoryUsage, StringFormat={}{0:N1} MB}" Width="90"/>
                                 <DataGridTextColumn Binding="{Binding DiskUsage, StringFormat={}{0:N1} MB/s}" Width="70"/>

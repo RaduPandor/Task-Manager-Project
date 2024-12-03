@@ -92,8 +92,7 @@ namespace TaskManager.ViewModels
                 {
                     var processModel = new ProcessModel
                     {
-                        Name = process.ProcessName,
-                        Status = performanceMetricsService.GetProcessStatus(process)
+                        Name = process.ProcessName
                     };
 
                     return Task.Run(async () =>
