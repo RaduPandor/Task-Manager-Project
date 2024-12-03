@@ -38,12 +38,7 @@ namespace TaskManager.ViewModels
             };
             cancellationTokenSource = new CancellationTokenSource();
             LoadStaticGpuMetrics();
-            LoadDynamicGpuMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        ~GPUViewModel()
-        {
-            Dispose(false);
+            LoadDynamicGpuMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string DeviceId { get; }

@@ -28,6 +28,8 @@ namespace TaskManager.ViewModels
             cachedProcesses = new Dictionary<int, Process>();
         }
 
+        public event EventHandler CancelRequested;
+
         public ObservableCollection<ProcessModel> Processes { get; }
 
         public ICollectionView ProcessesView
@@ -54,7 +56,7 @@ namespace TaskManager.ViewModels
         public async Task OnNavigatedToAsync()
         {
             cancellationTokenSource = new CancellationTokenSource();
-            await LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            await LoadProcessesAsync(cancellationTokenSource.Token);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -66,9 +68,12 @@ namespace TaskManager.ViewModels
 
             if (disposing)
             {
+                CancelRequested?.Invoke(this, EventArgs.Empty);
+
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource?.Dispose();
                 cancellationTokenSource = null;
+
                 Processes.Clear();
                 cachedProcesses.Clear();
             }
@@ -76,89 +81,120 @@ namespace TaskManager.ViewModels
             disposed = true;
         }
 
-        private async Task LoadProcessesAsync(CancellationToken token)
+        private async Task LoadProcessesAsync(CancellationToken externalToken)
         {
-            cachedProcesses = Process.GetProcesses()
-                                      .ToDictionary(p => p.Id, p => p);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
+            var token = linkedCts.Token;
 
-            await Task.Run(() =>
+            EventHandler value = (_, _) => linkedCts.Cancel();
+            CancelRequested += value;
+
+            try
             {
-                Parallel.ForEach(cachedProcesses.Values, process =>
+                cachedProcesses = Process.GetProcesses()
+                                          .ToDictionary(p => p.Id, p => p);
+
+                await Task.Run(
+                    () =>
                 {
-                    if (token.IsCancellationRequested)
+                    Parallel.ForEach(cachedProcesses.Values, process =>
                     {
-                        return;
-                    }
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
 
-                    var processModel = new ProcessModel();
-                    try
-                    {
-                        processModel.Name = process.ProcessName;
-                        processModel.Id = process.Id;
-                        processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
-                        processModel.CpuUsage = 0;
-                        processModel.NetworkUsage = 0;
-                        processModel.DiskUsage = 0;
-                    }
-                    catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                    {
-                        return;
-                    }
+                        var processModel = new ProcessModel();
+                        try
+                        {
+                            processModel.Name = process.ProcessName;
+                            processModel.Id = process.Id;
+                            processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                            processModel.CpuUsage = 0;
+                            processModel.NetworkUsage = 0;
+                            processModel.DiskUsage = 0;
+                        }
+                        catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+                        {
+                            return;
+                        }
 
-                    App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
-                });
-            });
+                        App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
+                    });
+                }, token);
 
-            foreach (var processModel in Processes)
-            {
-                if (!token.IsCancellationRequested)
+                foreach (var processModel in Processes)
                 {
-                    Task.Run(() => UpdateProcessMetricsAsync(processModel, token), token);
+                    if (!token.IsCancellationRequested)
+                    {
+                        _ = Task.Run(() => UpdateProcessMetricsAsync(processModel, token), token);
+                    }
                 }
             }
-        }
-
-        private async Task UpdateProcessMetricsAsync(ProcessModel processModel, CancellationToken token)
-        {
-            if (!cachedProcesses.TryGetValue(processModel.Id, out var process))
+            catch (OperationCanceledException)
             {
                 return;
             }
-
-            while (!process.HasExited && !token.IsCancellationRequested)
+            finally
             {
-                processModel.CpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
-                processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
-                processModel.NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
-                processModel.DiskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
+                CancelRequested -= value;
+            }
+        }
 
-                App.Current.Dispatcher.Invoke(() =>
+        private async Task UpdateProcessMetricsAsync(ProcessModel processModel, CancellationToken externalToken)
+        {
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
+            var token = linkedCts.Token;
+
+            EventHandler value = (_, _) => linkedCts.Cancel();
+            CancelRequested += value;
+
+            try
+            {
+                if (!cachedProcesses.TryGetValue(processModel.Id, out var process))
                 {
-                    var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
-                    if (item == null)
+                    return;
+                }
+
+                while (!process.HasExited && !token.IsCancellationRequested)
+                {
+                    processModel.CpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
+                    processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                    processModel.NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
+                    processModel.DiskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
+
+                    App.Current.Dispatcher.Invoke(() =>
                     {
-                        return;
+                        var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
+                        if (item == null)
+                        {
+                            return;
+                        }
+
+                        item.CpuUsage = processModel.CpuUsage;
+                        item.MemoryUsage = processModel.MemoryUsage;
+                        item.NetworkUsage = processModel.NetworkUsage;
+                        item.DiskUsage = processModel.DiskUsage;
+                        ProcessesView.Refresh();
+                    });
+
+                    try
+                    {
+                        await Task.Delay(2000, token);
                     }
-
-                    item.CpuUsage = processModel.CpuUsage;
-                    item.MemoryUsage = processModel.MemoryUsage;
-                    item.NetworkUsage = processModel.NetworkUsage;
-                    item.DiskUsage = processModel.DiskUsage;
-                    ProcessesView.Refresh();
-                });
-
-                try
-                {
-                    await Task.Delay(2000, token);
+                    catch (TaskCanceledException)
+                    {
+                        break;
+                    }
                 }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    break;
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            finally
+            {
+                CancelRequested -= value;
             }
         }
     }

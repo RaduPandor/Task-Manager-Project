@@ -31,12 +31,7 @@ namespace TaskManager.ViewModels
                     }
             };
             LoadStaticMemoryMetrics();
-            LoadDynamicMemoryMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        ~MemoryViewModel()
-        {
-            Dispose(false);
+            LoadDynamicMemoryMetricsAsync(cancellationTokenSource.Token);
         }
 
         public ObservableCollection<MemoryModel> MemoryModel { get; }

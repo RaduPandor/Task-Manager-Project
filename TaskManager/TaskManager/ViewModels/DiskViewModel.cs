@@ -40,12 +40,7 @@ namespace TaskManager.ViewModels
             cancellationTokenSource = new CancellationTokenSource();
             LoadStaticDiskMetrics();
             InitializePerformanceCounters();
-            LoadDynamicDiskMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        ~DiskViewModel()
-        {
-            Dispose(false);
+            LoadDynamicDiskMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string DeviceId { get; }

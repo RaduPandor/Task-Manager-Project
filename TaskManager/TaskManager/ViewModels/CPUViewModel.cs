@@ -31,8 +31,8 @@ namespace TaskManager.ViewModels
                     }
             };
             cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(() => LoadStaticCPUMetricsAsync()).ConfigureAwait(false);
-            LoadDynamicCPUMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            Task.Run(() => LoadStaticCPUMetricsAsync());
+            LoadDynamicCPUMetricsAsync(cancellationTokenSource.Token);
         }
 
         public ObservableCollection<CPUModel> CPUData { get; }

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.ServiceProcess;
@@ -70,9 +71,9 @@ namespace TaskManager.ViewModels
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
                 {
-                    throw new NotImplementedException();
+                    return string.Empty;
                 }
 
                 return string.Empty;
@@ -101,9 +102,9 @@ namespace TaskManager.ViewModels
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
                 {
-                    throw new NotImplementedException();
+                    return string.Empty;
                 }
 
                 return string.Empty;
@@ -126,9 +127,9 @@ namespace TaskManager.ViewModels
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
                 {
-                    throw new NotImplementedException();
+                    return string.Empty;
                 }
 
                 return string.Empty;

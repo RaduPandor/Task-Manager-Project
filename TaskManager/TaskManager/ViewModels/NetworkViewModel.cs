@@ -37,12 +37,7 @@ namespace TaskManager.ViewModels
             cancellationTokenSource = new CancellationTokenSource();
             LoadStaticNetworkMetrics();
             InitializePerformanceCounters();
-            LoadDynamicNetworkMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        ~NetworkViewModel()
-        {
-            Dispose(false);
+            LoadDynamicNetworkMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string AdapterName { get; }

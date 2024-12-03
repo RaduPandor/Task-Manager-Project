@@ -68,13 +68,9 @@ namespace TaskManager.ViewModels
                 var cpuTime = process.TotalProcessorTime;
                 return $"{cpuTime.Hours}:{cpuTime.Minutes:D2}:{cpuTime.Seconds:D2}";
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception || ex is UnauthorizedAccessException)
             {
                 return "0:00:00";
-            }
-            catch (Exception)
-            {
-                throw new NotImplementedException();
             }
         }
     }

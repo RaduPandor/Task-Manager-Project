@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -39,7 +40,7 @@ namespace TaskManager.ViewModels
         public async Task OnNavigatedToAsync()
         {
             cancellationTokenSource = new CancellationTokenSource();
-            await LoadUsersAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            await LoadUsersAsync(cancellationTokenSource.Token);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -79,7 +80,7 @@ namespace TaskManager.ViewModels
                 tasks.Add(loadMetricsTask);
             }
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks);
         }
 
         private async Task LoadDynamicUserMetricsAsync(UserViewModel userModel, IGrouping<string, Process> processGroup, CancellationToken token)
@@ -125,9 +126,9 @@ namespace TaskManager.ViewModels
                     userModel.TotalNetworkUsage = totalNetworkUsage;
                 });
             }
-            catch (TaskCanceledException)
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
-                throw new NotImplementedException();
+                return;
             }
         }
 

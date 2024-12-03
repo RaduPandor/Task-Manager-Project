@@ -98,7 +98,7 @@ namespace TaskManager.ViewModels
                     return versionInfo.CompanyName ?? string.Empty;
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
                 return string.Empty;
             }
@@ -127,13 +127,9 @@ namespace TaskManager.ViewModels
                     }
                 }
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
                 return "Not measured";
-            }
-            catch (Exception)
-            {
-                throw new NotImplementedException();
             }
 
             return "None";
@@ -154,13 +150,9 @@ namespace TaskManager.ViewModels
 
                 return File.Exists(executablePath);
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
                 return false;
-            }
-            catch (Exception)
-            {
-                throw new NotImplementedException();
             }
         }
     }
