@@ -1,19 +1,18 @@
 using System.Windows;
 using TaskManager.Services;
 using TaskManager.ViewModels;
-using Xunit;
 
 namespace Tests
 {
     public class MainWindowViewModelFacts
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsHelper;
         private readonly WindowCommands windowCommands;
         private readonly MainWindowViewModel mainWindowViewModel;
 
         public MainWindowViewModelFacts()
         {
-            performanceMetricsHelper = new PerformanceMetricsHelper(new NativeMethodsService());
+            performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
             windowCommands = new WindowCommands();
             mainWindowViewModel = new MainWindowViewModel(performanceMetricsHelper, windowCommands);
         }

@@ -23,8 +23,6 @@ namespace TaskManager.Models
 
         public string PageFile { get; set; }
 
-        public string Type { get; set; }
-
         public double ActiveTime
         {
             get => activeTime;

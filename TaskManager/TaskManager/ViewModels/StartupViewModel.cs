@@ -19,21 +19,31 @@ namespace TaskManager.ViewModels
 
         public ObservableCollection<StartupModel> StartupPrograms { get; }
 
-        public async Task LoadDataAsync()
+        public void OnNavigatedFrom()
         {
+            StartupPrograms.Clear();
+        }
+
+        public async Task OnNavigatedToAsync()
+        {
+            await Task.Run(() => LoadDataAsync());
+        }
+
+        private async Task LoadDataAsync()
+        {
+            var startupPaths = new[]
+            {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
+                @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit",
+                @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell"
+            };
+
             await Task.Run(() =>
             {
-                var startupPaths = new[]
-                {
-                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
-                    @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
-                    @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
-                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
-                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit",
-                    @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell"
-                };
-
                 foreach (var path in startupPaths)
                 {
                     CheckStartupPrograms(path, RegistryHive.LocalMachine);
@@ -50,6 +60,7 @@ namespace TaskManager.ViewModels
                 key = hive == RegistryHive.LocalMachine
                     ? Registry.LocalMachine.OpenSubKey(registryPath)
                     : Registry.CurrentUser.OpenSubKey(registryPath);
+
                 if (key == null)
                 {
                     return;
@@ -59,6 +70,7 @@ namespace TaskManager.ViewModels
                 {
                     string programPath = key.GetValue(valueName) as string;
                     programPath = Environment.ExpandEnvironmentVariables(programPath);
+
                     var processModel = new StartupModel
                     {
                         Name = Path.GetFileNameWithoutExtension(programPath),
@@ -90,6 +102,10 @@ namespace TaskManager.ViewModels
             {
                 return string.Empty;
             }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
+            }
 
             return string.Empty;
         }
@@ -119,6 +135,10 @@ namespace TaskManager.ViewModels
             {
                 return "Not measured";
             }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
+            }
 
             return "None";
         }
@@ -141,6 +161,10 @@ namespace TaskManager.ViewModels
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
                 return false;
+            }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
             }
         }
     }

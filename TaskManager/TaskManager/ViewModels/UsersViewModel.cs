@@ -1,48 +1,33 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Drawing;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Data;
 using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class UsersViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
+    public class UsersViewModel : BaseViewModel, IDisposable, ILoadableViewModel
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource cancellationTokenSource;
         private bool disposed;
-        private ICollectionView usersView;
 
-        public UsersViewModel(PerformanceMetricsHelper performanceMetricsHelper)
+        public UsersViewModel(PerformanceMetricsService performanceMetricsService)
         {
-            this.performanceMetricsHelper = performanceMetricsHelper;
-            Users = new ObservableCollection<UsersModel>();
-            UsersView = CollectionViewSource.GetDefaultView(Users);
-            cancellationTokenSource = new CancellationTokenSource();
+            this.performanceMetricsService = performanceMetricsService;
+            Users = new ObservableCollection<UserViewModel>();
         }
 
-        public ObservableCollection<UsersModel> Users { get; }
+        public ObservableCollection<UserViewModel> Users { get; }
 
-        public ICollectionView UsersView
+        public void OnNavigatedFrom()
         {
-            get => usersView;
-            private set
-            {
-                usersView = value;
-                OnPropertyChanged(nameof(UsersView));
-            }
-        }
-
-        public void StopMonitoring()
-        {
-            cancellationTokenSource?.Cancel();
-            cancellationTokenSource?.Dispose();
-            cancellationTokenSource = null;
+            Dispose();
         }
 
         public void Dispose()
@@ -51,7 +36,7 @@ namespace TaskManager.ViewModels
             GC.SuppressFinalize(this);
         }
 
-        public async Task LoadDataAsync()
+        public async Task OnNavigatedToAsync()
         {
             cancellationTokenSource = new CancellationTokenSource();
             await LoadUsersAsync(cancellationTokenSource.Token).ConfigureAwait(false);
@@ -66,7 +51,10 @@ namespace TaskManager.ViewModels
 
             if (disposing)
             {
-                StopMonitoring();
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource?.Dispose();
+                cancellationTokenSource = null;
+                Users.Clear();
             }
 
             disposed = true;
@@ -74,73 +62,73 @@ namespace TaskManager.ViewModels
 
         private async Task LoadUsersAsync(CancellationToken token)
         {
-            var processes = Process.GetProcesses().GroupBy(p => performanceMetricsHelper.GetProcessOwner(p.Id))
+            var processes = Process.GetProcesses()
+                .GroupBy(p => performanceMetricsService.GetProcessOwner(p.Id))
                 .Where(g => !string.IsNullOrWhiteSpace(g.Key) && !IsSystemUser(g.Key))
                 .ToList();
+
+            var tasks = new List<Task>();
 
             foreach (var group in processes)
             {
                 var userName = group.Key;
                 var processCount = group.Count();
-                var userModel = new UsersModel(userName, processCount);
+                var userModel = new UserViewModel(userName, processCount);
                 Users.Add(userModel);
-                Task.Run(() => LoadDynamicUserMetricsAsync(userModel, group, token), token);
+                var loadMetricsTask = LoadDynamicUserMetricsAsync(userModel, group, token);
+                tasks.Add(loadMetricsTask);
             }
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
-        private async Task LoadDynamicUserMetricsAsync(UsersModel userModel, IGrouping<string, Process> processGroup, CancellationToken token)
+        private async Task LoadDynamicUserMetricsAsync(UserViewModel userModel, IGrouping<string, Process> processGroup, CancellationToken token)
         {
             userModel.Processes.Clear();
 
-            while (!token.IsCancellationRequested)
+            try
             {
-                try
+                var tasks = processGroup.Select(process =>
                 {
-                    var tasks = processGroup.Select(process =>
+                    var processModel = new ProcessModel
                     {
-                        var processModel = new ProcessModel
-                        {
-                            Name = process.ProcessName,
-                            Status = performanceMetricsHelper.GetProcessStatus(process)
-                        };
+                        Name = process.ProcessName,
+                        Status = performanceMetricsService.GetProcessStatus(process)
+                    };
 
-                        return Task.Run(async () =>
-                        {
-                            processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
-                            processModel.CpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
-                            processModel.DiskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
-                            processModel.NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
-
-                            return processModel;
-                        });
-                    }).ToArray();
-
-                    var processModels = await Task.WhenAll(tasks);
-                    foreach (var processModel in processModels)
+                    return Task.Run(async () =>
                     {
-                        userModel.Processes.Add(processModel);
-                    }
+                        processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                        processModel.CpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
+                        processModel.DiskUsage = await performanceMetricsService.GetDiskUsageAsync(process);
+                        processModel.NetworkUsage = await performanceMetricsService.GetNetworkUsageAsync();
 
-                    var totalMemoryUsage = processGroup.Sum(p => Math.Round(p.WorkingSet64 / (1024.0 * 1024.0), 1));
-                    var totalCpuUsage = userModel.Processes.Sum(p => p.CpuUsage);
-                    var totalDiskUsage = userModel.Processes.Sum(p => p.DiskUsage);
-                    var totalNetworkUsage = userModel.Processes.Sum(p => p.NetworkUsage);
-
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        userModel.TotalMemoryUsage = totalMemoryUsage;
-                        userModel.TotalCpuUsage = totalCpuUsage;
-                        userModel.TotalDiskUsage = totalDiskUsage;
-                        userModel.TotalNetworkUsage = totalNetworkUsage;
-                        UsersView.Refresh();
+                        return processModel;
                     });
+                }).ToArray();
 
-                    await Task.Delay(2000, token);
-                }
-                catch (TaskCanceledException)
+                var processModels = await Task.WhenAll(tasks);
+                foreach (var processModel in processModels)
                 {
-                    break;
+                    userModel.Processes.Add(processModel);
                 }
+
+                var totalMemoryUsage = processGroup.Sum(p => Math.Round(p.WorkingSet64 / (1024.0 * 1024.0), 1));
+                var totalCpuUsage = userModel.Processes.Sum(p => p.CpuUsage);
+                var totalDiskUsage = userModel.Processes.Sum(p => p.DiskUsage);
+                var totalNetworkUsage = userModel.Processes.Sum(p => p.NetworkUsage);
+
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    userModel.TotalMemoryUsage = totalMemoryUsage;
+                    userModel.TotalCpuUsage = totalCpuUsage;
+                    userModel.TotalDiskUsage = totalDiskUsage;
+                    userModel.TotalNetworkUsage = totalNetworkUsage;
+                });
+            }
+            catch (TaskCanceledException)
+            {
+                throw new NotImplementedException();
             }
         }
 

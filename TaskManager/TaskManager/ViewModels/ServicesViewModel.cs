@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -19,7 +20,17 @@ namespace TaskManager.ViewModels
 
         public ObservableCollection<ServicesModel> Services { get; }
 
-        public async Task LoadDataAsync()
+        public void OnNavigatedFrom()
+        {
+            Services.Clear();
+        }
+
+        public async Task OnNavigatedToAsync()
+        {
+            await Task.Run(() => LoadDataAsync());
+        }
+
+        private async Task LoadDataAsync()
         {
             var servicesList = new List<ServicesModel>();
             var tasks = ServiceController.GetServices().Select(async service =>
@@ -48,13 +59,20 @@ namespace TaskManager.ViewModels
         {
             return await Task.Run(() =>
             {
-                using (var sc = new ServiceController(serviceName))
+                try
                 {
-                    var process = Process.GetProcessesByName(serviceName);
-                    if (process.Length > 0)
+                    using (var sc = new ServiceController(serviceName))
                     {
-                        return process[0].Id.ToString();
+                        var process = Process.GetProcessesByName(serviceName);
+                        if (process.Length > 0)
+                        {
+                            return process[0].Id.ToString();
+                        }
                     }
+                }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
                 }
 
                 return string.Empty;
@@ -65,20 +83,27 @@ namespace TaskManager.ViewModels
         {
             return await Task.Run(() =>
             {
-                string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
+                try
                 {
-                    if (key != null)
+                    string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
                     {
-                        object description = key.GetValue("Description");
-                        string descriptionString = description?.ToString() ?? string.Empty;
-                        if (descriptionString.StartsWith("@"))
+                        if (key != null)
                         {
-                            return string.Empty;
-                        }
+                            object description = key.GetValue("Description");
+                            string descriptionString = description?.ToString() ?? string.Empty;
+                            if (descriptionString.StartsWith("@"))
+                            {
+                                return string.Empty;
+                            }
 
-                        return descriptionString;
+                            return descriptionString;
+                        }
                     }
+                }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
                 }
 
                 return string.Empty;
@@ -89,14 +114,21 @@ namespace TaskManager.ViewModels
         {
             return await Task.Run(() =>
             {
-                string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
+                try
                 {
-                    if (key != null)
+                    string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
                     {
-                        object groupName = key.GetValue("Group");
-                        return groupName?.ToString() ?? string.Empty;
+                        if (key != null)
+                        {
+                            object groupName = key.GetValue("Group");
+                            return groupName?.ToString() ?? string.Empty;
+                        }
                     }
+                }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
                 }
 
                 return string.Empty;

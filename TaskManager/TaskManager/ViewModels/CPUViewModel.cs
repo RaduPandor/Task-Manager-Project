@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using TaskManager.Models;
+using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
@@ -32,11 +33,6 @@ namespace TaskManager.ViewModels
             cancellationTokenSource = new CancellationTokenSource();
             Task.Run(() => LoadStaticCPUMetricsAsync()).ConfigureAwait(false);
             LoadDynamicCPUMetricsAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        ~CPUViewModel()
-        {
-            Dispose(false);
         }
 
         public ObservableCollection<CPUModel> CPUData { get; }

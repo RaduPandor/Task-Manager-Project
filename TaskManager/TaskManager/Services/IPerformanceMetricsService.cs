@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace TaskManager.Services
 {
-    public interface IPerformanceMetricsHelper
+    public interface IPerformanceMetricsService
     {
         Task<double> GetCpuUsageAsync(Process process);
 

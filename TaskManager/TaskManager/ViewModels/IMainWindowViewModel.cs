@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 
-namespace TaskManager.Services
+namespace TaskManager.ViewModels
 {
     public interface IMainWindowViewModel
     {

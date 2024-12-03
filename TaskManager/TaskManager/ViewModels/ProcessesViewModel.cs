@@ -12,24 +12,18 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class ProcessesViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
+    public class ProcessesViewModel : BaseViewModel, IDisposable, ILoadableViewModel
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsHelper;
         private CancellationTokenSource cancellationTokenSource;
         private bool disposed;
         private ICollectionView processesView;
 
-        public ProcessesViewModel(PerformanceMetricsHelper performanceMetricsHelper)
+        public ProcessesViewModel(PerformanceMetricsService performanceMetricsHelper)
         {
             this.performanceMetricsHelper = performanceMetricsHelper;
             Processes = new ObservableCollection<ProcessModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
-            cancellationTokenSource = new CancellationTokenSource();
-        }
-
-        ~ProcessesViewModel()
-        {
-            Dispose(false);
         }
 
         public ObservableCollection<ProcessModel> Processes { get; }
@@ -44,15 +38,9 @@ namespace TaskManager.ViewModels
             }
         }
 
-        public void StopMonitoring()
+        public void OnNavigatedFrom()
         {
-            if (cancellationTokenSource == null)
-            {
-                return;
-            }
-
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
+            Dispose();
         }
 
         public void Dispose()
@@ -61,7 +49,7 @@ namespace TaskManager.ViewModels
             GC.SuppressFinalize(this);
         }
 
-        public async Task LoadDataAsync()
+        public async Task OnNavigatedToAsync()
         {
             cancellationTokenSource = new CancellationTokenSource();
             await LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
@@ -76,7 +64,9 @@ namespace TaskManager.ViewModels
 
             if (disposing)
             {
-                StopMonitoring();
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource?.Dispose();
+                cancellationTokenSource = null;
                 Processes.Clear();
             }
 
@@ -157,6 +147,10 @@ namespace TaskManager.ViewModels
                 catch (TaskCanceledException)
                 {
                     break;
+                }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
                 }
             }
         }

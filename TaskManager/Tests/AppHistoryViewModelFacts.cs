@@ -6,11 +6,11 @@ namespace Tests
 {
     public class AppHistoryViewModelFacts
     {
-        private readonly Mock<PerformanceMetricsHelper> mockPerformanceMetricsHelper;
+        private readonly Mock<PerformanceMetricsService> mockPerformanceMetricsHelper;
 
         public AppHistoryViewModelFacts()
         {
-            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsHelper>(MockBehavior.Strict, new NativeMethodsService());
+            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsService>(MockBehavior.Strict, new NativeMethodsService());
         }
 
         [Fact]

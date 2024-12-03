@@ -1,15 +1,16 @@
 ﻿using System.Collections.ObjectModel;
+using TaskManager.Models;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class UsersModel : BaseViewModel
+    public class UserViewModel : BaseViewModel
     {
         private double totalCpuUsage;
         private double totalMemoryUsage;
         private double totalDiskUsage;
         private double totalNetworkUsage;
 
-        public UsersModel(string userName, int processCount)
+        public UserViewModel(string userName, int processCount)
         {
             UserName = userName;
             ProcessCount = processCount;

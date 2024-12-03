@@ -1,6 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using Moq;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using Moq;
 using TaskManager.Models;
 using TaskManager.Services;
 using TaskManager.ViewModels;
@@ -9,11 +9,11 @@ namespace Tests
 {
     public class DetailsViewModelFacts
     {
-        private readonly Mock<PerformanceMetricsHelper> mockPerformanceMetricsHelper;
+        private readonly Mock<PerformanceMetricsService> mockPerformanceMetricsHelper;
 
         public DetailsViewModelFacts()
         {
-            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsHelper>(MockBehavior.Strict, new NativeMethodsService());
+            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsService>(MockBehavior.Strict, new NativeMethodsService());
         }
 
         [Fact]

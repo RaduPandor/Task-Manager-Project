@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace TaskManager.Services
 {
-    public class PerformanceMetricsHelper : IPerformanceMetricsHelper
+    public class PerformanceMetricsService : IPerformanceMetricsService
     {
         private const uint Token = 0x0008;
         private const uint TokenUser = 1;
         private readonly INativeMethodsService nativeMethodsService;
 
-        public PerformanceMetricsHelper(INativeMethodsService nativeMethods)
+        public PerformanceMetricsService(INativeMethodsService nativeMethods)
         {
             nativeMethodsService = nativeMethods;
         }
@@ -51,6 +51,10 @@ namespace TaskManager.Services
                 {
                     return 0;
                 }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
+                }
             });
         }
 
@@ -79,6 +83,10 @@ namespace TaskManager.Services
                 catch (InvalidOperationException)
                 {
                     return 0;
+                }
+                catch (Exception)
+                {
+                    throw new NotImplementedException();
                 }
             });
         }
@@ -151,6 +159,10 @@ namespace TaskManager.Services
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
                 return false;
+            }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
             }
         }
 

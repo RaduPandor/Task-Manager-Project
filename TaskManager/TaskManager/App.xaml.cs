@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
 using TaskManager.Services;
 using TaskManager.ViewModels;
 
@@ -13,7 +13,7 @@ namespace TaskManager
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<INativeMethodsService, NativeMethodsService>();
             serviceCollection.AddSingleton<IWindowCommands, WindowCommands>();
-            serviceCollection.AddSingleton<IPerformanceMetricsHelper, PerformanceMetricsHelper>();
+            serviceCollection.AddSingleton<IPerformanceMetricsService, PerformanceMetricsService>();
             serviceCollection.AddSingleton<IMainWindowViewModel, MainWindowViewModel>();
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }

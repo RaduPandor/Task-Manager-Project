@@ -12,21 +12,31 @@ namespace TaskManager.ViewModels
 {
     public class AppHistoryViewModel : BaseViewModel, ILoadableViewModel
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsService;
 
-        public AppHistoryViewModel(PerformanceMetricsHelper performanceMetricsHelper)
+        public AppHistoryViewModel(PerformanceMetricsService performanceMetricsService)
         {
-            this.performanceMetricsHelper = performanceMetricsHelper;
+            this.performanceMetricsService = performanceMetricsService;
             AppHistory = new ObservableCollection<AppHistoryModel>();
         }
 
         public ObservableCollection<AppHistoryModel> AppHistory { get; }
 
+        public void OnNavigatedFrom()
+        {
+            AppHistory.Clear();
+        }
+
+        public async Task OnNavigatedToAsync()
+        {
+            await Task.Run(() => LoadDataAsync());
+        }
+
         public async Task LoadDataAsync()
         {
-            var apps = Process.GetProcesses()
-                              .Where(p => p.MainWindowHandle != IntPtr.Zero)
-                              .ToArray();
+            var apps = await Task.Run(() => Process.GetProcesses()
+                                                   .Where(p => p.MainWindowHandle != IntPtr.Zero)
+                                                   .ToArray());
 
             var appModels = new List<AppHistoryModel>();
             var tasks = apps.Select(async app =>
@@ -35,15 +45,14 @@ namespace TaskManager.ViewModels
                 {
                     Name = app.ProcessName,
                     CPUTime = GetFormattedCpuTime(app),
-                    NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync()
+                    NetworkUsage = await performanceMetricsService.GetNetworkUsageAsync()
                 };
 
                 appModels.Add(appModel);
             }).ToArray();
 
             await Task.WhenAll(tasks);
-
-            App.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 foreach (var appModel in appModels)
                 {
@@ -62,6 +71,10 @@ namespace TaskManager.ViewModels
             catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
             {
                 return "0:00:00";
+            }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
             }
         }
     }

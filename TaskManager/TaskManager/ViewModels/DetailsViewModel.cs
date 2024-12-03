@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
 using TaskManager.Models;
@@ -12,24 +10,17 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class DetailsViewModel : BaseViewModel, ICancellableViewModel, IDisposable, ILoadableViewModel
+    public class DetailsViewModel : BaseViewModel, ILoadableViewModel
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private readonly PerformanceMetricsService performanceMetricsHelper;
         private ICollectionView processesView;
 
-        public DetailsViewModel(PerformanceMetricsHelper performanceMetricsHelper)
+        public DetailsViewModel(PerformanceMetricsService performanceMetricsHelper)
         {
             this.performanceMetricsHelper = performanceMetricsHelper;
             Processes = new ObservableCollection<DetailsModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
             ProcessesView.SortDescriptions.Add(new SortDescription(nameof(DetailsModel.CpuUsage), ListSortDirection.Descending));
-        }
-
-        ~DetailsViewModel()
-        {
-            Dispose(false);
         }
 
         public ObservableCollection<DetailsModel> Processes { get; }
@@ -44,118 +35,78 @@ namespace TaskManager.ViewModels
             }
         }
 
-        public void StopMonitoring()
+        public void OnNavigatedFrom()
         {
-            if (cancellationTokenSource == null)
-            {
-                return;
-            }
-
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
+            Processes.Clear();
         }
 
-        public void Dispose()
+        public async Task OnNavigatedToAsync()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            await Task.Run(() => LoadProcessesAsync());
         }
 
-        public async Task LoadDataAsync()
-        {
-            cancellationTokenSource = new CancellationTokenSource();
-            await LoadProcessesAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            if (disposing)
-            {
-                StopMonitoring();
-            }
-
-            disposed = true;
-        }
-
-        private async Task LoadProcessesAsync(CancellationToken token)
+        private async Task LoadProcessesAsync()
         {
             var processes = Process.GetProcesses();
-            var tasks = new List<Task>();
-            foreach (var process in processes)
+            var tasks = processes.Select(async process =>
             {
-                tasks.Add(Task.Run(
-                    async () =>
+                var processModel = new DetailsModel
                 {
-                    if (token.IsCancellationRequested)
-                    {
-                        return;
-                    }
+                    Name = process.ProcessName,
+                    Id = process.Id,
+                    Status = process.Responding ? "Running" : "Suspended",
+                    UserName = await performanceMetricsHelper.GetProcessOwnerAsync(process.Id),
+                    CpuUsage = "0",
+                    MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3),
+                    Architecture = Environment.Is64BitProcess ? "x64" : "x86",
+                    Description = GetProcessDescription(process)
+                };
 
-                    var processModel = new DetailsModel
-                    {
-                        Name = process.ProcessName,
-                        Id = process.Id,
-                        Status = process.Responding ? "Running" : "Suspended",
-                        UserName = await performanceMetricsHelper.GetProcessOwnerAsync(process.Id),
-                        CpuUsage = "0",
-                        MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3),
-                        Architecture = Environment.Is64BitProcess ? "x64" : "x86",
-                        Description = GetProcessDescription(process)
-                    };
-
-                    App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
-                }, token));
-            }
+                App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
+            });
 
             await Task.WhenAll(tasks);
+
             foreach (var processModel in Processes)
             {
-                if (!token.IsCancellationRequested)
-                {
-                    Task.Run(() => UpdateProcessMetricsPeriodicallyAsync(processModel, token), token);
-                }
+                _ = Task.Run(() => UpdateProcessMetricsPeriodicallyAsync(processModel));
             }
         }
 
-        private async Task UpdateProcessMetricsPeriodicallyAsync(DetailsModel processModel, CancellationToken token)
+        private async Task UpdateProcessMetricsPeriodicallyAsync(DetailsModel processModel)
         {
             var process = Process.GetProcesses().FirstOrDefault(p => p.Id == processModel.Id);
 
-            if (process == null)
+            if (process?.HasExited != false)
             {
                 return;
             }
 
-            while (!process.HasExited && !token.IsCancellationRequested)
+            try
             {
-                processModel.CpuUsage = (await performanceMetricsHelper.GetCpuUsageAsync(process)).ToString();
-                processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3);
-                App.Current.Dispatcher.Invoke(() =>
+                while (!process.HasExited)
                 {
-                    var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
-                    if (item == null)
+                    var cpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
+                    var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3);
+
+                    App.Current.Dispatcher.Invoke(() =>
                     {
-                        return;
-                    }
+                        var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
+                        if (item != null)
+                        {
+                            item.CpuUsage = cpuUsage.ToString();
+                            item.MemoryUsage = memoryUsage;
+                        }
 
-                    item.CpuUsage = processModel.CpuUsage;
-                    item.MemoryUsage = processModel.MemoryUsage;
-                    ProcessesView.Refresh();
-                });
+                        ProcessesView.Refresh();
+                    });
 
-                try
-                {
-                    await Task.Delay(2000, token);
+                    await Task.Delay(2000);
                 }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
+            }
+            catch (TaskCanceledException)
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -172,6 +123,10 @@ namespace TaskManager.ViewModels
             catch (InvalidOperationException)
             {
                 return "Process exited";
+            }
+            catch (Exception)
+            {
+                throw new NotImplementedException();
             }
         }
     }

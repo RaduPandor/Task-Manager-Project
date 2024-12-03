@@ -1,12 +1,11 @@
 ﻿using System.Diagnostics;
 using TaskManager.Services;
-using Xunit;
 
 namespace Tests
 {
     public class PerformanceMetricsHelperTests
     {
-        private readonly PerformanceMetricsHelper performanceMetricsHelper = new (new NativeMethodsService());
+        private readonly PerformanceMetricsService performanceMetricsHelper = new(new NativeMethodsService());
         [Fact]
         public async Task GetCpuUsageAsyncReturnsExpectedValue()
         {
@@ -25,7 +24,7 @@ namespace Tests
         [Fact]
         public async Task GetDiskUsageAsyncReturnsExpectedValue()
         {
-            var performanceMetricsHelper = new PerformanceMetricsHelper(new NativeMethodsService());
+            var performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
             var process = Process.GetCurrentProcess();
             var diskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
             Assert.InRange(diskUsage, 0, double.MaxValue);

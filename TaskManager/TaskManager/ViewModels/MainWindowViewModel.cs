@@ -9,27 +9,28 @@ namespace TaskManager.ViewModels
     public class MainWindowViewModel : BaseViewModel, IMainWindowViewModel
     {
         private readonly WindowCommands windowCommands;
-        private readonly PerformanceMetricsHelper performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsService;
         private BaseViewModel currentView;
         private bool isMenuVisible = true;
         private bool isLoading;
 
-        public MainWindowViewModel(IPerformanceMetricsHelper performanceMetricsHelper, IWindowCommands windowCommands)
+        public MainWindowViewModel(IPerformanceMetricsService performanceMetricsService, IWindowCommands windowCommands)
         {
-            this.performanceMetricsHelper = (PerformanceMetricsHelper)performanceMetricsHelper;
+            this.performanceMetricsService = (PerformanceMetricsService)performanceMetricsService;
             this.windowCommands = (WindowCommands)windowCommands;
             MinimizeCommand = windowCommands.MinimizeCommand;
             MaximizeCommand = windowCommands.MaximizeCommand;
             CloseCommand = windowCommands.CloseCommand;
             DragMoveCommand = windowCommands.DragMoveCommand;
             ToggleMenuCommand = new RelayCommand<object>(param => ToggleMenu());
-            ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsHelper));
+            ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsService));
             ShowPerformance = Show(() => new PerformanceViewModel());
-            ShowDetails = Show(() => new DetailsViewModel(this.performanceMetricsHelper));
+            ShowDetails = Show(() => new DetailsViewModel(this.performanceMetricsService));
             ShowServices = Show(() => new ServicesViewModel());
             ShowStartup = Show(() => new StartupViewModel());
-            ShowAppHistory = Show(() => new AppHistoryViewModel(this.performanceMetricsHelper));
-            ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsHelper));
+            ShowAppHistory = Show(() => new AppHistoryViewModel(this.performanceMetricsService));
+            ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsService));
+            ShowProcesses.Execute(null);
         }
 
         public ICommand MinimizeCommand { get; }
@@ -117,10 +118,17 @@ namespace TaskManager.ViewModels
         private async Task ShowViewAsync(Func<BaseViewModel> createViewModel)
         {
             IsLoading = true;
-            CurrentView = createViewModel();
-            if (CurrentView is ILoadableViewModel loadableViewModel)
+
+            if (CurrentView is ILoadableViewModel loadableCurrentView)
             {
-                await loadableViewModel.LoadDataAsync();
+                loadableCurrentView.OnNavigatedFrom();
+            }
+
+            CurrentView = createViewModel();
+
+            if (CurrentView is ILoadableViewModel loadableNewView)
+            {
+                await loadableNewView.OnNavigatedToAsync();
             }
 
             IsLoading = false;

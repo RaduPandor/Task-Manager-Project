@@ -80,10 +80,6 @@
                     <Run Text="Page File: " />
                     <Run Text="{Binding LatestDiskModel.PageFile}" />
                 </TextBlock>
-                <TextBlock>
-                    <Run Text="Type: " />
-                    <Run Text="{Binding LatestDiskModel.Type}" />
-                </TextBlock>
             </StackPanel>
         </Grid>
     </Grid>

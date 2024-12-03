@@ -27,7 +27,7 @@ namespace Tests
                 .Setup(service => service.CloseHandle(It.IsAny<IntPtr>()))
                 .Returns(true);
 
-            var performanceMetricsHelper = new PerformanceMetricsHelper(mockNativeMethodsService.Object);
+            var performanceMetricsHelper = new PerformanceMetricsService(mockNativeMethodsService.Object);
             var result = await performanceMetricsHelper.GetProcessOwnerAsync(123);
             Assert.Equal("TestUser", result);
         }

@@ -1,4 +1,4 @@
-﻿namespace TaskManager.ViewModels
+﻿namespace TaskManager.Services
 {
     public interface ICancellableViewModel
     {

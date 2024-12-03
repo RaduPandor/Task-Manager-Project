@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using TaskManager.Models;
+using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
@@ -112,8 +113,7 @@ namespace TaskManager.ViewModels
                 Capacity = GetCapacity(),
                 Formatted = IsFormatted(),
                 SystemDisk = GetLogicalDrivesForDeviceId(DeviceId).Contains("C:") ? "yes" : "no",
-                PageFile = IsPageFile(),
-                Type = GetDiskType()
+                PageFile = IsPageFile()
             };
 
             Application.Current.Dispatcher.Invoke(() =>
@@ -227,11 +227,6 @@ namespace TaskManager.ViewModels
             }
 
             return "no";
-        }
-
-        private string GetDiskType()
-        {
-            return "Unknown";
         }
 
         private ObservableCollection<string> GetLogicalDrivesForDeviceId(string deviceId)

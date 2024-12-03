@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
-using TaskManager.Services;
+using TaskManager.ViewModels;
 
 namespace TaskManager
 {

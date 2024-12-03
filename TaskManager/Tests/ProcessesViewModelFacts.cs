@@ -1,5 +1,5 @@
-﻿using System.Collections.Specialized;
-using Moq;
+﻿using Moq;
+using System.Collections.Specialized;
 using TaskManager.Models;
 using TaskManager.Services;
 using TaskManager.ViewModels;
@@ -8,11 +8,11 @@ namespace Tests
 {
     public class ProcessesViewModelFacts
     {
-        private readonly Mock<PerformanceMetricsHelper> mockPerformanceMetricsHelper;
+        private readonly Mock<PerformanceMetricsService> mockPerformanceMetricsHelper;
 
         public ProcessesViewModelFacts()
         {
-            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsHelper>(MockBehavior.Strict, new NativeMethodsService());
+            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsService>(MockBehavior.Strict, new NativeMethodsService());
         }
 
         [Fact]
@@ -34,19 +34,13 @@ namespace Tests
         }
 
         [Fact]
-        public void ProcessesViewIsNotNull()
-        {
-            var viewModel = new ProcessesViewModel(mockPerformanceMetricsHelper.Object);
-            Assert.NotNull(viewModel.ProcessesView);
-        }
-
-        [Fact]
-        public void ProcessesViewShouldReflectChangesInProcesses()
+        public void ProcessesShouldReflectChangesCorrectly()
         {
             var viewModel = new ProcessesViewModel(mockPerformanceMetricsHelper.Object);
             var processModel = new ProcessModel { Name = "TestProcess" };
+
             viewModel.Processes.Add(processModel);
-            var item = viewModel.ProcessesView.Cast<ProcessModel>().FirstOrDefault(p => p.Name == "TestProcess");
+            var item = viewModel.Processes.FirstOrDefault(p => p.Name == "TestProcess");
             Assert.NotNull(item);
         }
     }
