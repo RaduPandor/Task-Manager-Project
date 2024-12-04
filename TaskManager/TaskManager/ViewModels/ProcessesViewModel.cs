@@ -99,7 +99,7 @@ namespace TaskManager.ViewModels
                 {
                     Parallel.ForEach(cachedProcesses.Values, process =>
                     {
-                        if (token.IsCancellationRequested)
+                        if (externalToken.IsCancellationRequested)
                         {
                             return;
                         }
@@ -151,7 +151,7 @@ namespace TaskManager.ViewModels
 
             try
             {
-                if (!cachedProcesses.TryGetValue(processModel.Id, out var process))
+                if (!cachedProcesses.TryGetValue(processModel.Id, out var process) || externalToken.IsCancellationRequested)
                 {
                     return;
                 }
