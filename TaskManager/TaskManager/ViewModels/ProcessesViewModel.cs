@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -91,37 +92,25 @@ namespace TaskManager.ViewModels
 
             try
             {
-                cachedProcesses = Process.GetProcesses()
-                                          .ToDictionary(p => p.Id, p => p);
-
-                await Task.Run(
-                    () =>
+                cachedProcesses = Process.GetProcesses().ToDictionary(p => p.Id, p => p);
+                foreach (var process in cachedProcesses.Values)
                 {
-                    Parallel.ForEach(cachedProcesses.Values, process =>
+                    if (token.IsCancellationRequested)
                     {
-                        if (externalToken.IsCancellationRequested)
-                        {
-                            return;
-                        }
+                        break;
+                    }
 
-                        var processModel = new ProcessModel();
-                        try
-                        {
-                            processModel.Name = process.ProcessName;
-                            processModel.Id = process.Id;
-                            processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
-                            processModel.CpuUsage = 0;
-                            processModel.NetworkUsage = 0;
-                            processModel.DiskUsage = 0;
-                        }
-                        catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                        {
-                            return;
-                        }
+                    var processModel = new ProcessModel();
 
-                        App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
-                    });
-                }, token);
+                    processModel.Name = process.ProcessName;
+                    processModel.Id = process.Id;
+                    processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                    processModel.CpuUsage = 0;
+                    processModel.NetworkUsage = 0;
+                    processModel.DiskUsage = 0;
+
+                    await App.Current.Dispatcher.InvokeAsync(() => Processes.Add(processModel));
+                }
 
                 foreach (var processModel in Processes)
                 {
@@ -156,37 +145,7 @@ namespace TaskManager.ViewModels
                     return;
                 }
 
-                while (!process.HasExited && !token.IsCancellationRequested)
-                {
-                    processModel.CpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
-                    processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
-                    processModel.NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
-                    processModel.DiskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
-
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
-                        if (item == null)
-                        {
-                            return;
-                        }
-
-                        item.CpuUsage = processModel.CpuUsage;
-                        item.MemoryUsage = processModel.MemoryUsage;
-                        item.NetworkUsage = processModel.NetworkUsage;
-                        item.DiskUsage = processModel.DiskUsage;
-                        ProcessesView.Refresh();
-                    });
-
-                    try
-                    {
-                        await Task.Delay(2000, token);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        break;
-                    }
-                }
+                await MonitorProcessAsync(processModel, process, token);
             }
             catch (OperationCanceledException)
             {
@@ -196,6 +155,71 @@ namespace TaskManager.ViewModels
             {
                 CancelRequested -= value;
             }
+        }
+
+        private async Task MonitorProcessAsync(ProcessModel processModel, Process process, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (ProcessHasExited(process))
+                {
+                    RemoveExitedProcess(processModel.Id);
+                    break;
+                }
+
+                await UpdateMetricsAsync(processModel, process);
+                await Task.Delay(2000, token);
+            }
+        }
+
+        private bool ProcessHasExited(Process process)
+        {
+            try
+            {
+                return process.HasExited;
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            {
+                return true;
+            }
+        }
+
+        private void RemoveExitedProcess(int processId)
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var item = Processes.FirstOrDefault(p => p.Id == processId);
+                if (item == null)
+                {
+                    return;
+                }
+
+                Processes.Remove(item);
+                ProcessesView.Refresh();
+            });
+        }
+
+        private async Task UpdateMetricsAsync(ProcessModel processModel, Process process)
+        {
+            processModel.CpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
+            processModel.MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+            processModel.NetworkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
+            processModel.DiskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var item = Processes.FirstOrDefault(p => p.Id == processModel.Id);
+                if (item == null)
+                {
+                    return;
+                }
+
+                item.CpuUsage = processModel.CpuUsage;
+                item.MemoryUsage = processModel.MemoryUsage;
+                item.NetworkUsage = processModel.NetworkUsage;
+                item.DiskUsage = processModel.DiskUsage;
+                ProcessesView.Refresh();
+            });
         }
     }
 }

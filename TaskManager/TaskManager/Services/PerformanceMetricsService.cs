@@ -21,10 +21,10 @@ namespace TaskManager.Services
         {
             try
             {
-                TimeSpan startCpuUsage = process.TotalProcessorTime;
+                TimeSpan startCpuUsage = GetTotalProcessorTime(process);
                 DateTime startTime = DateTime.UtcNow;
                 await Task.Delay(50);
-                TimeSpan endCpuUsage = process.TotalProcessorTime;
+                TimeSpan endCpuUsage = GetTotalProcessorTime(process);
                 DateTime endTime = DateTime.UtcNow;
                 double cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
                 double totalMsPassed = (endTime - startTime).TotalMilliseconds;
@@ -125,6 +125,18 @@ namespace TaskManager.Services
             finally
             {
                 nativeMethodsService.CloseHandle(processHandle);
+            }
+        }
+
+        private TimeSpan GetTotalProcessorTime(Process process)
+        {
+            try
+            {
+                return process.TotalProcessorTime;
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException || ex is Win32Exception || ex is InvalidOperationException)
+            {
+                return TimeSpan.Zero;
             }
         }
 
