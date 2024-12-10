@@ -113,6 +113,7 @@ namespace TaskManager.ViewModels
                         processModel.MemoryUsage = metrics.MemoryUsage;
                         processModel.NetworkUsage = metrics.NetworkUsage;
                         processModel.DiskUsage = metrics.DiskUsage;
+                        ProcessesView.Refresh();
                     });
                 }
 
