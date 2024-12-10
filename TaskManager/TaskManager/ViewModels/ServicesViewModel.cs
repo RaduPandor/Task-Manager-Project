@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using TaskManager.Models;
 using TaskManager.Services;
@@ -14,6 +15,8 @@ namespace TaskManager.ViewModels
 {
     public class ServicesViewModel : BaseViewModel, ILoadableViewModel
     {
+        private CancellationTokenSource linkedCancellationTokenSource;
+
         public ServicesViewModel()
         {
             Services = new ObservableCollection<ServicesModel>();
@@ -21,21 +24,31 @@ namespace TaskManager.ViewModels
 
         public ObservableCollection<ServicesModel> Services { get; }
 
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
+        {
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            await Task.Run(() => LoadDataAsync(token), token);
+        }
+
         public void OnNavigatedFrom()
         {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
             Services.Clear();
         }
 
-        public async Task OnNavigatedToAsync()
-        {
-            await Task.Run(() => LoadDataAsync());
-        }
-
-        private async Task LoadDataAsync()
+        private async Task LoadDataAsync(CancellationToken token)
         {
             var servicesList = new List<ServicesModel>();
             var tasks = ServiceController.GetServices().Select(async service =>
             {
+                if (token.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 return new ServicesModel
                 {
                     Name = service.ServiceName,
@@ -47,9 +60,15 @@ namespace TaskManager.ViewModels
             });
 
             var allServices = await Task.WhenAll(tasks);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
             App.Current.Dispatcher.Invoke(() =>
             {
-                foreach (var serviceModel in allServices)
+                foreach (var serviceModel in allServices.Where(s => s != null))
                 {
                     Services.Add(serviceModel);
                 }

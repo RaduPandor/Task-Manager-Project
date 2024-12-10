@@ -12,11 +12,10 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class UsersViewModel : BaseViewModel, IDisposable, ILoadableViewModel
+    public class UsersViewModel : BaseViewModel, ILoadableViewModel
     {
         private readonly PerformanceMetricsService performanceMetricsService;
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
 
         public UsersViewModel(PerformanceMetricsService performanceMetricsService)
         {
@@ -28,37 +27,17 @@ namespace TaskManager.ViewModels
 
         public void OnNavigatedFrom()
         {
-            Dispose();
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            Users.Clear();
         }
 
-        public void Dispose()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public async Task OnNavigatedToAsync()
-        {
-            cancellationTokenSource = new CancellationTokenSource();
-            await LoadUsersAsync(cancellationTokenSource.Token);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            if (disposing)
-            {
-                cancellationTokenSource?.Cancel();
-                cancellationTokenSource?.Dispose();
-                cancellationTokenSource = null;
-                Users.Clear();
-            }
-
-            disposed = true;
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            await Task.Run(() => LoadUsersAsync(token), token);
         }
 
         private async Task LoadUsersAsync(CancellationToken token)
@@ -75,7 +54,7 @@ namespace TaskManager.ViewModels
                 var userName = group.Key;
                 var processCount = group.Count();
                 var userModel = new UserViewModel(userName, processCount);
-                Users.Add(userModel);
+                System.Windows.Application.Current.Dispatcher.Invoke(() => Users.Add(userModel));
                 var loadMetricsTask = LoadDynamicUserMetricsAsync(userModel, group, token);
                 tasks.Add(loadMetricsTask);
             }
@@ -128,7 +107,7 @@ namespace TaskManager.ViewModels
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
-                return;
+                throw;
             }
         }
 

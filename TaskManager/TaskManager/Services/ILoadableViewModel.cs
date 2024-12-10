@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace TaskManager.Services
 {
     public interface ILoadableViewModel
     {
-        Task OnNavigatedToAsync();
+        Task OnNavigatedToAsync(CancellationToken rootToken);
 
         void OnNavigatedFrom();
     }

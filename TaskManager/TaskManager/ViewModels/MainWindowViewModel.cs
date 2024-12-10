@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -11,6 +12,7 @@ namespace TaskManager.ViewModels
         private readonly WindowCommands windowCommands;
         private readonly PerformanceMetricsService performanceMetricsService;
         private BaseViewModel currentView;
+        private CancellationTokenSource cancellationTokenSource;
         private bool isMenuVisible = true;
         private bool isLoading;
 
@@ -118,6 +120,8 @@ namespace TaskManager.ViewModels
         private async Task ShowViewAsync(Func<BaseViewModel> createViewModel)
         {
             IsLoading = true;
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = new CancellationTokenSource();
 
             if (CurrentView is ILoadableViewModel loadableCurrentView)
             {
@@ -125,10 +129,9 @@ namespace TaskManager.ViewModels
             }
 
             CurrentView = createViewModel();
-
             if (CurrentView is ILoadableViewModel loadableNewView)
             {
-                await loadableNewView.OnNavigatedToAsync();
+                await loadableNewView.OnNavigatedToAsync(cancellationTokenSource.Token);
             }
 
             IsLoading = false;

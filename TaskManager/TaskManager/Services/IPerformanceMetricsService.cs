@@ -11,8 +11,6 @@ namespace TaskManager.Services
 
         Task<double> GetNetworkUsageAsync();
 
-        Task<string> GetProcessOwnerAsync(int processId);
-
         string GetProcessOwner(int processId);
     }
 }

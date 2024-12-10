@@ -33,11 +33,6 @@ namespace TaskManager.Models
             get => cpuUsage;
             set
             {
-                if (Math.Abs(cpuUsage - value) < 0.1)
-                {
-                    return;
-                }
-
                 cpuUsage = value;
                 OnPropertyChanged(nameof(CpuUsage));
             }
@@ -48,11 +43,6 @@ namespace TaskManager.Models
             get => memoryUsage;
             set
             {
-                if (Math.Abs(memoryUsage - value) < 0.1)
-                {
-                    return;
-                }
-
                 memoryUsage = value;
                 OnPropertyChanged(nameof(MemoryUsage));
             }
@@ -63,11 +53,6 @@ namespace TaskManager.Models
             get => diskUsage;
             set
             {
-                if (Math.Abs(diskUsage - value) < 0.1)
-                {
-                    return;
-                }
-
                 diskUsage = value;
                 OnPropertyChanged(nameof(DiskUsage));
             }
@@ -78,11 +63,6 @@ namespace TaskManager.Models
             get => networkUsage;
             set
             {
-                if (Math.Abs(networkUsage - value) < 0.1)
-                {
-                    return;
-                }
-
                 networkUsage = value;
                 OnPropertyChanged(nameof(NetworkUsage));
             }
@@ -93,11 +73,6 @@ namespace TaskManager.Models
             get => gpuUsage;
             set
             {
-                if (Math.Abs(gpuUsage - value) < 0.1)
-                {
-                    return;
-                }
-
                 gpuUsage = value;
                 OnPropertyChanged(nameof(GpuUsage));
             }

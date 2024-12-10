@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using TaskManager.Models;
 using TaskManager.Services;
@@ -12,6 +13,8 @@ namespace TaskManager.ViewModels
 {
     public class StartupViewModel : BaseViewModel, ILoadableViewModel
     {
+        private CancellationTokenSource linkedCancellationTokenSource;
+
         public StartupViewModel()
         {
             StartupPrograms = new ObservableCollection<StartupModel>();
@@ -21,15 +24,20 @@ namespace TaskManager.ViewModels
 
         public void OnNavigatedFrom()
         {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
             StartupPrograms.Clear();
         }
 
-        public async Task OnNavigatedToAsync()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            await Task.Run(() => LoadDataAsync());
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            await Task.Run(() => LoadDataAsync(token), token);
         }
 
-        private async Task LoadDataAsync()
+        private async Task LoadDataAsync(CancellationToken token)
         {
             var startupPaths = new[]
             {
@@ -42,17 +50,19 @@ namespace TaskManager.ViewModels
                 @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell"
             };
 
-            await Task.Run(() =>
+            foreach (var path in startupPaths)
             {
-                foreach (var path in startupPaths)
+                if (token.IsCancellationRequested)
                 {
-                    CheckStartupPrograms(path, RegistryHive.LocalMachine);
-                    CheckStartupPrograms(path, RegistryHive.CurrentUser);
+                    return;
                 }
-            });
+
+                await Task.Run(() => CheckStartupPrograms(path, RegistryHive.LocalMachine, token), token);
+                await Task.Run(() => CheckStartupPrograms(path, RegistryHive.CurrentUser, token), token);
+            }
         }
 
-        private void CheckStartupPrograms(string registryPath, RegistryHive hive)
+        private void CheckStartupPrograms(string registryPath, RegistryHive hive, CancellationToken token)
         {
             RegistryKey? key = null;
             try
@@ -68,6 +78,11 @@ namespace TaskManager.ViewModels
 
                 foreach (string valueName in key.GetValueNames())
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     string programPath = key.GetValue(valueName) as string;
                     programPath = Environment.ExpandEnvironmentVariables(programPath);
 

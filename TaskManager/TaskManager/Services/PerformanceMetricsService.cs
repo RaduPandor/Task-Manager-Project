@@ -21,15 +21,24 @@ namespace TaskManager.Services
         {
             try
             {
-                TimeSpan startCpuUsage = GetTotalProcessorTime(process);
-                DateTime startTime = DateTime.UtcNow;
-                await Task.Delay(50);
-                TimeSpan endCpuUsage = GetTotalProcessorTime(process);
-                DateTime endTime = DateTime.UtcNow;
-                double cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
-                double totalMsPassed = (endTime - startTime).TotalMilliseconds;
-                double cpuUsageTotal = (cpuUsedMs / totalMsPassed) / Environment.ProcessorCount * 100;
-                return Math.Round(cpuUsageTotal, 1);
+                if (process?.HasExited != false)
+                {
+                    return 0;
+                }
+
+                long initialCpuTime = process.TotalProcessorTime.Ticks;
+                long initialSystemCpuTime = Process.GetCurrentProcess().TotalProcessorTime.Ticks;
+                long initialUserCpuTime = Process.GetCurrentProcess().UserProcessorTime.Ticks;
+                var stopwatch = Stopwatch.StartNew();
+                await Task.Delay(500);
+                stopwatch.Stop();
+                long totalCpuTime = process.TotalProcessorTime.Ticks - initialCpuTime;
+                long totalSystemCpuTime = Process.GetCurrentProcess().TotalProcessorTime.Ticks - initialSystemCpuTime;
+                long totalUserCpuTime = Process.GetCurrentProcess().UserProcessorTime.Ticks - initialUserCpuTime;
+                long elapsedMs = stopwatch.ElapsedMilliseconds;
+
+                double cpuUsage = (double)totalCpuTime / (double)(elapsedMs * TimeSpan.TicksPerMillisecond) / Environment.ProcessorCount * 100;
+                return Math.Round(cpuUsage, 1);
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
@@ -79,31 +88,6 @@ namespace TaskManager.Services
             {
                 return 0;
             }
-        }
-
-        public async Task<string> GetProcessOwnerAsync(int processId)
-        {
-            return await Task.Run(() =>
-            {
-                IntPtr processHandle = nativeMethodsService.OpenProcess(0x0400 | 0x0010, false, processId);
-                if (processHandle == IntPtr.Zero)
-                {
-                    return " ";
-                }
-
-                try
-                {
-                    return GetOwnerFromToken(processHandle);
-                }
-                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    return " ";
-                }
-                finally
-                {
-                    nativeMethodsService.CloseHandle(processHandle);
-                }
-            });
         }
 
         public string GetProcessOwner(int processId)

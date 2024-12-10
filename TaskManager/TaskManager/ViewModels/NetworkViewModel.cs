@@ -114,15 +114,7 @@ namespace TaskManager.ViewModels
             while (!token.IsCancellationRequested)
             {
                 App.Current.Dispatcher.Invoke(UpdateNetworkMetrics);
-
-                try
-                {
-                    await Task.Delay(1000, token);
-                }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
+                await Task.Delay(1000, token);
             }
         }
 

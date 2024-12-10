@@ -6,7 +6,7 @@ namespace Tests
     public class NativeMethodsFacts
     {
         [Fact]
-        public async Task GetProcessOwnerReturnsCorrectAccountName()
+        public void GetProcessOwnerReturnsCorrectAccountName()
         {
             var mockNativeMethodsService = new Mock<INativeMethodsService>();
             var processHandle = new IntPtr(123);
@@ -28,7 +28,7 @@ namespace Tests
                 .Returns(true);
 
             var performanceMetricsHelper = new PerformanceMetricsService(mockNativeMethodsService.Object);
-            var result = await performanceMetricsHelper.GetProcessOwnerAsync(123);
+            var result = performanceMetricsHelper.GetProcessOwner(123);
             Assert.Equal("TestUser", result);
         }
     }

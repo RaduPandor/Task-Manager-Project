@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using TaskManager.Models;
 using TaskManager.Services;
@@ -13,6 +14,7 @@ namespace TaskManager.ViewModels
     public class AppHistoryViewModel : BaseViewModel, ILoadableViewModel
     {
         private readonly PerformanceMetricsService performanceMetricsService;
+        private CancellationTokenSource linkedCancellationTokenSource;
 
         public AppHistoryViewModel(PerformanceMetricsService performanceMetricsService)
         {
@@ -24,15 +26,20 @@ namespace TaskManager.ViewModels
 
         public void OnNavigatedFrom()
         {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
             AppHistory.Clear();
         }
 
-        public async Task OnNavigatedToAsync()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            await Task.Run(() => LoadDataAsync());
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            await Task.Run(() => LoadDataAsync(token), token);
         }
 
-        public async Task LoadDataAsync()
+        public async Task LoadDataAsync(CancellationToken token)
         {
             var apps = await Task.Run(() => Process.GetProcesses()
                                                    .Where(p => p.MainWindowHandle != IntPtr.Zero)
@@ -41,6 +48,11 @@ namespace TaskManager.ViewModels
             var appModels = new List<AppHistoryModel>();
             var tasks = apps.Select(async app =>
             {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 var appModel = new AppHistoryModel
                 {
                     Name = app.ProcessName,
@@ -52,6 +64,11 @@ namespace TaskManager.ViewModels
             }).ToArray();
 
             await Task.WhenAll(tasks);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 foreach (var appModel in appModels)
