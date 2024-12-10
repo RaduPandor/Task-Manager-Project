@@ -14,14 +14,14 @@ namespace TaskManager.ViewModels
 {
     public class ProcessesViewModel : BaseViewModel, ILoadableViewModel
     {
-        private readonly PerformanceMetricsService performanceMetricsHelper;
+        private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource linkedCancellationTokenSource;
         private ICollectionView processesView;
         private Dictionary<int, Process> cachedProcesses;
 
-        public ProcessesViewModel(PerformanceMetricsService performanceMetricsHelper)
+        public ProcessesViewModel(PerformanceMetricsService performanceMetricsService)
         {
-            this.performanceMetricsHelper = performanceMetricsHelper;
+            this.performanceMetricsService = performanceMetricsService;
             Processes = new ObservableCollection<ProcessModel>();
             ProcessesView = CollectionViewSource.GetDefaultView(Processes);
             cachedProcesses = new Dictionary<int, Process>();
@@ -101,37 +101,27 @@ namespace TaskManager.ViewModels
 
             while (!token.IsCancellationRequested && !process.HasExited)
             {
-                var metrics = await GetProcessMetricsAsync(process);
-                if (Math.Abs(processModel.CpuUsage - metrics.CpuUsage) > 0.1 ||
-                    Math.Abs(processModel.MemoryUsage - metrics.MemoryUsage) > 0.1 ||
-                    Math.Abs(processModel.NetworkUsage - metrics.NetworkUsage) > 0.1 ||
-                    Math.Abs(processModel.DiskUsage - metrics.DiskUsage) > 0.1)
+                var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
+                var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
+                var diskUsage = await performanceMetricsService.GetDiskUsageAsync(process);
+                var networkUsage = await performanceMetricsService.GetNetworkUsageAsync();
+                if (Math.Abs(processModel.CpuUsage - cpuUsage) > 0.1 ||
+                    Math.Abs(processModel.MemoryUsage - memoryUsage) > 50 ||
+                    Math.Abs(processModel.NetworkUsage - networkUsage) > 0.1 ||
+                    Math.Abs(processModel.DiskUsage - diskUsage) > 0.1)
                 {
                     await App.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        processModel.CpuUsage = metrics.CpuUsage;
-                        processModel.MemoryUsage = metrics.MemoryUsage;
-                        processModel.NetworkUsage = metrics.NetworkUsage;
-                        processModel.DiskUsage = metrics.DiskUsage;
+                        processModel.CpuUsage = cpuUsage;
+                        processModel.MemoryUsage = memoryUsage;
+                        processModel.NetworkUsage = networkUsage;
+                        processModel.DiskUsage = diskUsage;
                         ProcessesView.Refresh();
                     });
                 }
 
                 await Task.Delay(1000, token);
             }
-        }
-
-        private async Task<(double CpuUsage, double MemoryUsage, double NetworkUsage, double DiskUsage)> GetProcessMetricsAsync(Process process)
-        {
-            var tasks = new[]
-            {
-                performanceMetricsHelper.GetCpuUsageAsync(process),
-                Task.FromResult(Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1)),
-                performanceMetricsHelper.GetNetworkUsageAsync(),
-                performanceMetricsHelper.GetDiskUsageAsync(process)
-            };
-            await Task.WhenAll(tasks);
-            return (tasks[0].Result, tasks[1].Result, tasks[2].Result, tasks[3].Result);
         }
 
         private bool HasPermissionToAccessProcess(Process process)
@@ -141,7 +131,7 @@ namespace TaskManager.ViewModels
                 var handle = process.Handle;
                 return true;
             }
-            catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException)
+            catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
             {
                 return false;
             }
