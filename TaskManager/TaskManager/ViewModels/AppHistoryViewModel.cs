@@ -15,6 +15,7 @@ namespace TaskManager.ViewModels
     {
         private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource linkedCancellationTokenSource;
+        private Task runningTask;
 
         public AppHistoryViewModel(PerformanceMetricsService performanceMetricsService)
         {
@@ -30,13 +31,20 @@ namespace TaskManager.ViewModels
             linkedCancellationTokenSource?.Dispose();
             linkedCancellationTokenSource = null;
             AppHistory.Clear();
+            if (runningTask == null)
+            {
+                return;
+            }
+
+            runningTask = null;
         }
 
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            await Task.Run(() => LoadDataAsync(token), token);
+            runningTask = Task.Run(() => LoadDataAsync(token), token);
+            await runningTask;
         }
 
         public async Task LoadDataAsync(CancellationToken token)

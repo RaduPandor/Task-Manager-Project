@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class GPUModel : BaseViewModel
+    public class GPUInfoViewModel : BaseViewModel
     {
         private double usage;
         private double temperature;

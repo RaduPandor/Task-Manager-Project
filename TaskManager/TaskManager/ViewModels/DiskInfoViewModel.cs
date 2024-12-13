@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class DiskModel : BaseViewModel
+    public class DiskInfoViewModel : BaseViewModel
     {
         private double activeTime;
         private double averageResponseTime;

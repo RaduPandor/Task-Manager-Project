@@ -1,9 +1,9 @@
 ﻿namespace TaskManager.Models
 {
-    public class NetworkInfo
+    public record NetworkInfo
     {
-        public string DisplayName { get; set; }
+        public string DisplayName { get; init; }
 
-        public string NetworkId { get; set; }
+        public string NetworkId { get; init; }
     }
 }

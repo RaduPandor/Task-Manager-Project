@@ -1,7 +1,6 @@
 ﻿using Moq;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using TaskManager.Models;
 using TaskManager.Services;
 using TaskManager.ViewModels;
 
@@ -21,7 +20,7 @@ namespace Tests
         {
             var viewModel = new DetailsViewModel(mockPerformanceMetricsHelper.Object);
             Assert.NotNull(viewModel.Processes);
-            Assert.IsType<ObservableCollection<DetailsModel>>(viewModel.Processes);
+            Assert.IsType<ObservableCollection<DetailsInfoViewModel>>(viewModel.Processes);
         }
 
         [Fact]
@@ -45,7 +44,7 @@ namespace Tests
                 }
             };
 
-            viewModel.Processes.Add(new DetailsModel { Name = "TestProcess" });
+            viewModel.Processes.Add(new DetailsInfoViewModel { Name = "TestProcess" });
             Assert.True(itemAdded);
         }
     }

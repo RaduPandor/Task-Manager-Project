@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -25,7 +24,7 @@ namespace TaskManager.ViewModels
         public NetworkViewModel(string adapterName)
         {
             AdapterName = adapterName;
-            NetworkModels = new ObservableCollection<NetworkModel>();
+            NetworkModels = new ObservableCollection<NetworkInfoViewModel>();
             NetworkUsageSeries = new SeriesCollection
             {
                 new LineSeries
@@ -42,11 +41,11 @@ namespace TaskManager.ViewModels
 
         public string AdapterName { get; }
 
-        public ObservableCollection<NetworkModel> NetworkModels { get; }
+        public ObservableCollection<NetworkInfoViewModel> NetworkModels { get; }
 
         public SeriesCollection NetworkUsageSeries { get; }
 
-        public NetworkModel LatestNetworkModel => NetworkModels.LastOrDefault();
+        public NetworkInfoViewModel LatestNetworkModel => NetworkModels.LastOrDefault();
 
         public void StopMonitoring()
         {
@@ -93,7 +92,7 @@ namespace TaskManager.ViewModels
         {
             var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
             var networkInterface = networkInterfaces.FirstOrDefault(nic => nic.Name == AdapterName);
-            var networkMetrics = new NetworkModel
+            var networkMetrics = new NetworkInfoViewModel
             {
                 DisplayName = AdapterName,
                 Description = networkInterface.Description,
@@ -141,7 +140,7 @@ namespace TaskManager.ViewModels
                 .FirstOrDefault(nic => nic.Name == AdapterName && nic.OperationalStatus == OperationalStatus.Up);
         }
 
-        private void UpdateMetrics(NetworkModel networkMetrics, IPv4InterfaceStatistics stats)
+        private void UpdateMetrics(NetworkInfoViewModel networkMetrics, IPv4InterfaceStatistics stats)
         {
             ulong currentBytesSent = (ulong)stats.BytesSent;
             ulong currentBytesReceived = (ulong)stats.BytesReceived;
@@ -161,7 +160,7 @@ namespace TaskManager.ViewModels
             UpdateChartData(networkMetrics);
         }
 
-        private void UpdateChartData(NetworkModel networkMetrics)
+        private void UpdateChartData(NetworkInfoViewModel networkMetrics)
         {
             double throughput = networkMetrics.Receive + networkMetrics.Send;
             NetworkUsageSeries[0].Values.Add(new ObservableValue(throughput));

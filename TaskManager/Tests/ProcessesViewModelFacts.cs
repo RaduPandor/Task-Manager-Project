@@ -29,7 +29,7 @@ namespace Tests
                 }
             };
 
-            viewModel.Processes.Add(new ProcessModel { Name = "TestProcess" });
+            viewModel.Processes.Add(new ProcessViewModel { Name = "TestProcess" });
             Assert.True(itemAdded);
         }
 
@@ -37,7 +37,7 @@ namespace Tests
         public void ProcessesShouldReflectChangesCorrectly()
         {
             var viewModel = new ProcessesViewModel(mockPerformanceMetricsHelper.Object);
-            var processModel = new ProcessModel { Name = "TestProcess" };
+            var processModel = new ProcessViewModel { Name = "TestProcess" };
 
             viewModel.Processes.Add(processModel);
             var item = viewModel.Processes.FirstOrDefault(p => p.Name == "TestProcess");

@@ -14,6 +14,7 @@ namespace TaskManager.ViewModels
     public class StartupViewModel : BaseViewModel, ILoadableViewModel
     {
         private CancellationTokenSource linkedCancellationTokenSource;
+        private Task runningTask;
 
         public StartupViewModel()
         {
@@ -28,13 +29,20 @@ namespace TaskManager.ViewModels
             linkedCancellationTokenSource?.Dispose();
             linkedCancellationTokenSource = null;
             StartupPrograms.Clear();
+            if (runningTask == null)
+            {
+                return;
+            }
+
+            runningTask = null;
         }
 
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            await Task.Run(() => LoadDataAsync(token), token);
+            runningTask = Task.Run(() => LoadDataAsync(token), token);
+            await runningTask;
         }
 
         private async Task LoadDataAsync(CancellationToken token)

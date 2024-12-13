@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class NetworkModel : BaseViewModel
+    public class NetworkInfoViewModel : BaseViewModel
     {
         private double send;
         private double receive;

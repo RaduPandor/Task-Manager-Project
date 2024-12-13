@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using TaskManager.Models;
 
 namespace TaskManager.ViewModels
 {
@@ -14,7 +13,7 @@ namespace TaskManager.ViewModels
         {
             UserName = userName;
             ProcessCount = processCount;
-            Processes = new ObservableCollection<ProcessModel>();
+            Processes = new ObservableCollection<ProcessViewModel>();
         }
 
         public string UserName { get; }
@@ -23,7 +22,7 @@ namespace TaskManager.ViewModels
 
         public string DisplayName => $"{UserName} ({ProcessCount})";
 
-        public ObservableCollection<ProcessModel> Processes { get; }
+        public ObservableCollection<ProcessViewModel> Processes { get; }
 
         public double TotalCpuUsage
         {

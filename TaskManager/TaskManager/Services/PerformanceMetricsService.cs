@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -11,6 +12,7 @@ namespace TaskManager.Services
         private const uint Token = 0x0008;
         private const uint TokenUser = 1;
         private readonly INativeMethodsService nativeMethodsService;
+        private readonly ConcurrentDictionary<int, PerformanceCounter> cpuCounters = new ();
 
         public PerformanceMetricsService(INativeMethodsService nativeMethods)
         {
@@ -19,29 +21,30 @@ namespace TaskManager.Services
 
         public async Task<double> GetCpuUsageAsync(Process process)
         {
+            PerformanceCounter cpuCounter = cpuCounters.GetOrAdd(process.Id, (_) =>
+            {
+                try
+                {
+                    return new PerformanceCounter("Process", "% Processor Time", process.ProcessName, true);
+                }
+                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
+                {
+                    return null;
+                }
+            });
+
+            if (cpuCounter is null)
+            {
+                return 0;
+            }
+
             try
             {
-                if (process?.HasExited != false)
-                {
-                    return 0;
-                }
-
-                long initialCpuTime = process.TotalProcessorTime.Ticks;
-                long initialSystemCpuTime = Process.GetCurrentProcess().TotalProcessorTime.Ticks;
-                long initialUserCpuTime = Process.GetCurrentProcess().UserProcessorTime.Ticks;
-                var stopwatch = Stopwatch.StartNew();
-                await Task.Delay(500);
-                stopwatch.Stop();
-                long totalCpuTime = process.TotalProcessorTime.Ticks - initialCpuTime;
-                long totalSystemCpuTime = Process.GetCurrentProcess().TotalProcessorTime.Ticks - initialSystemCpuTime;
-                long totalUserCpuTime = Process.GetCurrentProcess().UserProcessorTime.Ticks - initialUserCpuTime;
-                long elapsedMs = stopwatch.ElapsedMilliseconds;
-
-                double cpuUsage = (double)totalCpuTime / (double)(elapsedMs * TimeSpan.TicksPerMillisecond) / Environment.ProcessorCount * 100;
-                return Math.Round(cpuUsage, 1);
+                return Math.Round(cpuCounter.NextValue(), 1);
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
+                cpuCounters.TryRemove(process.Id, out _);
                 return 0;
             }
         }
@@ -109,18 +112,6 @@ namespace TaskManager.Services
             finally
             {
                 nativeMethodsService.CloseHandle(processHandle);
-            }
-        }
-
-        private TimeSpan GetTotalProcessorTime(Process process)
-        {
-            try
-            {
-                return process.TotalProcessorTime;
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException || ex is Win32Exception || ex is InvalidOperationException)
-            {
-                return TimeSpan.Zero;
             }
         }
 

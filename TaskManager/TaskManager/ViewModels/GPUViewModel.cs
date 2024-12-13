@@ -10,7 +10,6 @@ using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -25,7 +24,7 @@ namespace TaskManager.ViewModels
         {
             DeviceId = deviceId;
             DisplayName = displayName;
-            GpuModel = new ObservableCollection<GPUModel>();
+            GpuModel = new ObservableCollection<GPUInfoViewModel>();
             computer = new Computer { IsGpuEnabled = true };
             computer.Open();
             GpuUsageSeries = new SeriesCollection
@@ -45,11 +44,11 @@ namespace TaskManager.ViewModels
 
         public string DisplayName { get; }
 
-        public ObservableCollection<GPUModel> GpuModel { get; }
+        public ObservableCollection<GPUInfoViewModel> GpuModel { get; }
 
         public SeriesCollection GpuUsageSeries { get; }
 
-        public GPUModel LatestGpuModel => GpuModel.LastOrDefault();
+        public GPUInfoViewModel LatestGpuModel => GpuModel.LastOrDefault();
 
         public void StopMonitoring()
         {
@@ -94,7 +93,7 @@ namespace TaskManager.ViewModels
 
                 if (primaryGpu != null)
                 {
-                    var gpuMetrics = new GPUModel
+                    var gpuMetrics = new GPUInfoViewModel
                     {
                         Model = primaryGpu["Name"]?.ToString() ?? " ",
                         DriverVersion = primaryGpu["DriverVersion"]?.ToString() ?? " ",

@@ -8,7 +8,6 @@ using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -20,7 +19,7 @@ namespace TaskManager.ViewModels
 
         public MemoryViewModel()
         {
-            MemoryModel = new ObservableCollection<MemoryModel>();
+            MemoryModel = new ObservableCollection<MemoryInfoViewModel>();
             cancellationTokenSource = new CancellationTokenSource();
             MemoryUsageSeries = new SeriesCollection
             {
@@ -34,11 +33,11 @@ namespace TaskManager.ViewModels
             LoadDynamicMemoryMetricsAsync(cancellationTokenSource.Token);
         }
 
-        public ObservableCollection<MemoryModel> MemoryModel { get; }
+        public ObservableCollection<MemoryInfoViewModel> MemoryModel { get; }
 
         public SeriesCollection MemoryUsageSeries { get; }
 
-        public MemoryModel LatestMemoryModel => MemoryModel.LastOrDefault();
+        public MemoryInfoViewModel LatestMemoryModel => MemoryModel.LastOrDefault();
 
         public void StopMonitoring()
         {
@@ -75,7 +74,7 @@ namespace TaskManager.ViewModels
 
         private void LoadStaticMemoryMetrics()
         {
-            var memoryMetrics = new MemoryModel();
+            var memoryMetrics = new MemoryInfoViewModel();
             var memoryDetails = GetMemoryDetails();
             var memoryStaticMetrics = GetStaticMemoryMetrics();
             memoryMetrics.Speed = memoryDetails.memorySpeed;
@@ -98,19 +97,18 @@ namespace TaskManager.ViewModels
             cancellationTokenSource = new CancellationTokenSource();
             while (!token.IsCancellationRequested)
             {
+                var memoryMetrics = LatestMemoryModel;
+                if (memoryMetrics == null)
+                {
+                    return;
+                }
+
+                var (totalMemory, inUseMemory, availableMemory) = GetMemoryMetrics();
+                memoryMetrics.TotalMemory = totalMemory;
+                memoryMetrics.InUseMemory = inUseMemory;
+                memoryMetrics.AvailableMemory = availableMemory;
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    var memoryMetrics = LatestMemoryModel;
-                    if (memoryMetrics == null)
-                    {
-                        return;
-                    }
-
-                    var (totalMemory, inUseMemory, availableMemory) = GetMemoryMetrics();
-                    memoryMetrics.TotalMemory = totalMemory;
-                    memoryMetrics.InUseMemory = inUseMemory;
-                    memoryMetrics.AvailableMemory = availableMemory;
-
                     MemoryUsageSeries[0].Values.Add(new ObservableValue(memoryMetrics.InUseMemory));
                     if (MemoryUsageSeries[0].Values.Count > 60)
                     {

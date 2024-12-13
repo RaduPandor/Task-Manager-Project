@@ -1,9 +1,9 @@
 ﻿namespace TaskManager.Models
 {
-    public class GPUInfo
+    public record GPUInfo
     {
-        public string DisplayName { get; set; }
+        public string DisplayName { get; init; }
 
-        public string DeviceId { get; set; }
+        public string DeviceId { get; init; }
     }
 }

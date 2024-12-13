@@ -1,11 +1,11 @@
 ﻿namespace TaskManager.Models
 {
-    public class AppHistoryModel
+    public record AppHistoryModel
     {
-        public string Name { get; set; }
+        public string Name { get; init; }
 
-        public string CPUTime { get; set; }
+        public string CPUTime { get; init; }
 
-        public double NetworkUsage { get; set; }
+        public double NetworkUsage { get; init; }
     }
 }

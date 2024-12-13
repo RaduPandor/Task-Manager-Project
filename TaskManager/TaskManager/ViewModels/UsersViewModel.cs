@@ -16,6 +16,7 @@ namespace TaskManager.ViewModels
     {
         private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource linkedCancellationTokenSource;
+        private Task runningTask;
 
         public UsersViewModel(PerformanceMetricsService performanceMetricsService)
         {
@@ -31,13 +32,20 @@ namespace TaskManager.ViewModels
             linkedCancellationTokenSource?.Dispose();
             linkedCancellationTokenSource = null;
             Users.Clear();
+            if (runningTask == null)
+            {
+                return;
+            }
+
+            runningTask = null;
         }
 
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            await Task.Run(() => LoadUsersAsync(token), token);
+            runningTask = Task.Run(() => LoadUsersAsync(token), token);
+            await runningTask;
         }
 
         private async Task LoadUsersAsync(CancellationToken token)
@@ -70,7 +78,7 @@ namespace TaskManager.ViewModels
             {
                 var tasks = processGroup.Select(process =>
                 {
-                    var processModel = new ProcessModel
+                    var processModel = new ProcessViewModel
                     {
                         Name = process.ProcessName
                     };

@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class ProcessModel : BaseViewModel
+    public class ProcessViewModel : BaseViewModel
     {
         private string name;
         private double cpuUsage;

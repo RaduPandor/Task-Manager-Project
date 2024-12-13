@@ -1,13 +1,13 @@
 ﻿namespace TaskManager.Models
 {
-    public class StartupModel
+    public record StartupModel
     {
-        public string Name { get; set; }
+        public string Name { get; init; }
 
-        public string Status { get; set; }
+        public string Status { get; init; }
 
-        public string Publisher { get; set; }
+        public string Publisher { get; init; }
 
-        public string StartupImpact { get; set; }
+        public string StartupImpact { get; init; }
     }
 }

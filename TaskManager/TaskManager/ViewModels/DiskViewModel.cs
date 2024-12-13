@@ -9,7 +9,6 @@ using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -28,7 +27,7 @@ namespace TaskManager.ViewModels
         {
             DeviceId = deviceId;
             DisplayName = displayName;
-            DiskModel = new ObservableCollection<DiskModel>();
+            DiskModel = new ObservableCollection<DiskInfoViewModel>();
             DiskUsageSeries = new SeriesCollection
             {
                     new LineSeries
@@ -47,11 +46,11 @@ namespace TaskManager.ViewModels
 
         public string DisplayName { get; }
 
-        public ObservableCollection<DiskModel> DiskModel { get; }
+        public ObservableCollection<DiskInfoViewModel> DiskModel { get; }
 
         public SeriesCollection DiskUsageSeries { get; }
 
-        public DiskModel LatestDiskModel => DiskModel.LastOrDefault();
+        public DiskInfoViewModel LatestDiskModel => DiskModel.LastOrDefault();
 
         public void StopMonitoring()
         {
@@ -102,7 +101,7 @@ namespace TaskManager.ViewModels
 
         private void LoadStaticDiskMetrics()
         {
-            var diskMetrics = new DiskModel
+            var diskMetrics = new DiskInfoViewModel
             {
                 Model = GetDiskModel(),
                 Capacity = GetCapacity(),

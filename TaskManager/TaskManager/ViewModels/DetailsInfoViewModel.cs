@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace TaskManager.Models
+namespace TaskManager.ViewModels
 {
-    public class DetailsModel : BaseViewModel
+    public class DetailsInfoViewModel : BaseViewModel
     {
         private string cpuUsage;
         private double memoryUsage;

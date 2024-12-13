@@ -9,7 +9,6 @@ using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -21,7 +20,7 @@ namespace TaskManager.ViewModels
 
         public CPUViewModel()
         {
-            CPUData = new ObservableCollection<CPUModel>();
+            CPUData = new ObservableCollection<CPUInfoViewModel>();
             CpuUsageSeries = new SeriesCollection
             {
                     new LineSeries
@@ -35,11 +34,11 @@ namespace TaskManager.ViewModels
             LoadDynamicCPUMetricsAsync(cancellationTokenSource.Token);
         }
 
-        public ObservableCollection<CPUModel> CPUData { get; }
+        public ObservableCollection<CPUInfoViewModel> CPUData { get; }
 
         public SeriesCollection CpuUsageSeries { get; }
 
-        public CPUModel LatestCPUModel => CPUData.LastOrDefault();
+        public CPUInfoViewModel LatestCPUModel => CPUData.LastOrDefault();
 
         public void StopMonitoring()
         {
@@ -93,7 +92,7 @@ namespace TaskManager.ViewModels
         {
             var cpuMetrics = await Task.Run(() =>
             {
-                var metrics = new CPUModel();
+                var metrics = new CPUInfoViewModel();
                 using (var searcher = new ManagementObjectSearcher(
                     "SELECT Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, VirtualizationFirmwareEnabled FROM Win32_Processor"))
                 {

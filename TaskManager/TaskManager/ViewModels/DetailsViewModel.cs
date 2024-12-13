@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Data;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -16,29 +14,15 @@ namespace TaskManager.ViewModels
     {
         private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource linkedCancellationTokenSource;
-        private ICollectionView processesView;
-        private Dictionary<int, Process> cachedProcesses;
+        private Task runningTask;
 
         public DetailsViewModel(PerformanceMetricsService performanceMetricsService)
         {
             this.performanceMetricsService = performanceMetricsService;
-            Processes = new ObservableCollection<DetailsModel>();
-            ProcessesView = CollectionViewSource.GetDefaultView(Processes);
-            ProcessesView.SortDescriptions.Add(new SortDescription(nameof(DetailsModel.CpuUsage), ListSortDirection.Descending));
-            cachedProcesses = new Dictionary<int, Process>();
+            Processes = new ObservableCollection<DetailsInfoViewModel>();
         }
 
-        public ObservableCollection<DetailsModel> Processes { get; }
-
-        public ICollectionView ProcessesView
-        {
-            get => processesView;
-            private set
-            {
-                processesView = value;
-                OnPropertyChanged(nameof(ProcessesView));
-            }
-        }
+        public ObservableCollection<DetailsInfoViewModel> Processes { get; }
 
         public void OnNavigatedFrom()
         {
@@ -46,29 +30,42 @@ namespace TaskManager.ViewModels
             linkedCancellationTokenSource?.Dispose();
             linkedCancellationTokenSource = null;
             Processes.Clear();
-            cachedProcesses.Clear();
+            if (runningTask == null)
+            {
+                return;
+            }
+
+            runningTask = null;
         }
 
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            await Task.Run(() => LoadProcessesAsync(token), token);
+            runningTask = Task.Run(() => LoadProcessesAsync(token));
+            await runningTask;
         }
 
         private async Task LoadProcessesAsync(CancellationToken token)
         {
-            cachedProcesses = Process.GetProcesses()
-                                      .ToDictionary(p => p.Id, p => p);
+            var processes = Process.GetProcesses();
 
-            var tasks = cachedProcesses.Values.Select(async process =>
+            var filteredProcesses = IsRunningAsAdmin()
+              ? processes.Where(p => HasPermissionToAccessProcess(p))
+               : processes.Where(p =>
+               {
+                   var owner = performanceMetricsService.GetProcessOwner(p.Id);
+                   return owner != " " && !IsSystemUser(owner);
+               });
+
+            foreach (var process in filteredProcesses)
             {
                 if (token.IsCancellationRequested)
                 {
-                    return;
+                    break;
                 }
 
-                var processModel = new DetailsModel
+                var processModel = new DetailsInfoViewModel
                 {
                     Name = process.ProcessName,
                     Id = process.Id,
@@ -80,45 +77,67 @@ namespace TaskManager.ViewModels
                     Description = GetProcessDescription(process)
                 };
 
-                App.Current.Dispatcher.Invoke(() => Processes.Add(processModel));
-            });
+                await App.Current.Dispatcher.InvokeAsync(() => Processes.Add(processModel));
+            }
 
-            await Task.WhenAll(tasks);
-
-            if (!token.IsCancellationRequested)
+            foreach (var processModel in Processes)
             {
-                foreach (var processModel in Processes)
+                if (!token.IsCancellationRequested)
                 {
-                    _ = Task.Run(() => UpdateProcessMetricsPeriodicallyAsync(processModel, token), token);
+                    _ = Task.Run(() => UpdateProcessMetricsAsync(processModel, token), token);
                 }
             }
         }
 
-        private async Task UpdateProcessMetricsPeriodicallyAsync(DetailsModel processModel, CancellationToken token)
+        private async Task UpdateProcessMetricsAsync(DetailsInfoViewModel processModel, CancellationToken token)
         {
-            if (!cachedProcesses.TryGetValue(processModel.Id, out var process) || process.HasExited)
+            try
             {
-                return;
-            }
-
-            while (!token.IsCancellationRequested && !process.HasExited)
-            {
-                var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
-                var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3);
-
-                if (Math.Abs(double.Parse(processModel.CpuUsage) - cpuUsage) > 0.1 ||
-                    Math.Abs(processModel.MemoryUsage - memoryUsage) > 50)
+                using (var process = Process.GetProcessById(processModel.Id))
                 {
-                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    if (process?.HasExited != false)
                     {
-                        processModel.CpuUsage = cpuUsage.ToString();
-                        processModel.MemoryUsage = memoryUsage;
-                        ProcessesView.Refresh();
-                    });
-                }
+                        return;
+                    }
 
-                await Task.Delay(1000, token);
+                    while (!token.IsCancellationRequested && !process.HasExited)
+                    {
+                        var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
+                        var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3);
+
+                        if (Math.Abs(double.Parse(processModel.CpuUsage) - cpuUsage) > 0.1 ||
+                              Math.Abs(processModel.MemoryUsage - memoryUsage) > 50)
+                        {
+                            await App.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                processModel.CpuUsage = cpuUsage.ToString();
+                                processModel.MemoryUsage = memoryUsage;
+                            });
+                        }
+
+                        await Task.Delay(1000, token);
+                    }
+                }
             }
+            catch (Exception ex) when (ex is ArgumentException)
+            {
+                await App.Current.Dispatcher.InvokeAsync(() => Processes.Remove(processModel));
+            }
+        }
+
+        private bool IsSystemUser(string userName)
+        {
+            var systemUsers = new[]
+           {
+                "SYSTEM",
+                "LOCAL SERVICE",
+                "NETWORK SERVICE",
+                "DefaultAccount"
+           };
+
+            return systemUsers.Contains(userName, StringComparer.OrdinalIgnoreCase)
+                   || userName.StartsWith("UMFD", StringComparison.OrdinalIgnoreCase)
+                   || userName.StartsWith("DWM", StringComparison.OrdinalIgnoreCase);
         }
 
         private string GetProcessDescription(Process process)
@@ -138,6 +157,26 @@ namespace TaskManager.ViewModels
             catch (UnauthorizedAccessException)
             {
                 return "Access denied";
+            }
+        }
+
+        private bool IsRunningAsAdmin()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        private bool HasPermissionToAccessProcess(Process process)
+        {
+            try
+            {
+                var handle = process.Handle;
+                return true;
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
+            {
+                return false;
             }
         }
     }
