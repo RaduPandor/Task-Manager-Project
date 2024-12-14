@@ -42,7 +42,7 @@ namespace TaskManager.ViewModels
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            runningTask = Task.Run(() => LoadProcessesAsync(token));
+            runningTask = Task.Run(async () => await LoadProcessesAsync(token));
             await runningTask;
         }
 
@@ -55,7 +55,7 @@ namespace TaskManager.ViewModels
                : processes.Where(p =>
                {
                    var owner = performanceMetricsService.GetProcessOwner(p.Id);
-                   return owner != " " && !IsSystemUser(owner);
+                   return owner != string.Empty && !IsSystemUser(owner);
                });
 
             foreach (var process in filteredProcesses)
@@ -115,9 +115,16 @@ namespace TaskManager.ViewModels
                             });
                         }
 
-                        await Task.Delay(1000, token);
+                        if (!token.IsCancellationRequested)
+                        {
+                            await Task.Delay(1000, token);
+                        }
                     }
                 }
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine($"Task cancelled for: {processModel.Name} {processModel.Id}");
             }
             catch (Exception ex) when (ex is ArgumentException)
             {

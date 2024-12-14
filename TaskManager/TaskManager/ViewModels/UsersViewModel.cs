@@ -44,7 +44,7 @@ namespace TaskManager.ViewModels
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            runningTask = Task.Run(() => LoadUsersAsync(token), token);
+            runningTask = Task.Run( async () => await LoadUsersAsync(token), token);
             await runningTask;
         }
 

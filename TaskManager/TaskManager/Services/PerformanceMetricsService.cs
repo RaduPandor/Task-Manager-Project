@@ -98,7 +98,7 @@ namespace TaskManager.Services
             IntPtr processHandle = nativeMethodsService.OpenProcess(0x0400 | 0x0010, false, processId);
             if (processHandle == IntPtr.Zero)
             {
-                return " ";
+                return string.Empty;
             }
 
             try
@@ -107,7 +107,7 @@ namespace TaskManager.Services
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {
-                return " ";
+                return string.Empty;
             }
             finally
             {
