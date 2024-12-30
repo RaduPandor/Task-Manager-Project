@@ -12,15 +12,14 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class MemoryViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class MemoryViewModel : BaseViewModel, ILoadableViewModel
     {
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
+        private Task runningTask;
 
         public MemoryViewModel()
         {
             MemoryModel = new ObservableCollection<MemoryInfoViewModel>();
-            cancellationTokenSource = new CancellationTokenSource();
             MemoryUsageSeries = new SeriesCollection
             {
                     new LineSeries
@@ -29,8 +28,6 @@ namespace TaskManager.ViewModels
                         PointGeometry = null
                     }
             };
-            LoadStaticMemoryMetrics();
-            LoadDynamicMemoryMetricsAsync(cancellationTokenSource.Token);
         }
 
         public ObservableCollection<MemoryInfoViewModel> MemoryModel { get; }
@@ -39,53 +36,64 @@ namespace TaskManager.ViewModels
 
         public MemoryInfoViewModel LatestMemoryModel => MemoryModel.LastOrDefault();
 
-        public void StopMonitoring()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            if (cancellationTokenSource == null)
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            await runningTask;
+        }
+
+        public void OnNavigatedFrom()
+        {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            MemoryModel.Clear();
+            if (runningTask == null)
             {
                 return;
             }
 
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
-            cancellationTokenSource = null;
+            runningTask = null;
         }
 
-        public void Dispose()
+        private async Task LoadDataAsync(CancellationToken token)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            await LoadStaticMemoryMetricsAsync(token);
+            await LoadDynamicMemoryMetricsAsync(token);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private async Task LoadStaticMemoryMetricsAsync(CancellationToken token)
         {
-            if (disposed)
+            var memoryMetrics = await Task.Run(
+                () =>
+            {
+                if (token.IsCancellationRequested)
+                {
+                    return null;
+                }
+
+                var metrics = new MemoryInfoViewModel();
+                var memoryDetails = GetMemoryDetails();
+                var memoryStaticMetrics = GetStaticMemoryMetrics();
+                metrics.Speed = memoryDetails.memorySpeed;
+                metrics.SlotsUsed = memoryDetails.slotsUsed;
+                metrics.FormFactor = memoryDetails.formFactor;
+                metrics.CommittedMemory = memoryStaticMetrics.committedMemory;
+                metrics.CachedMemory = memoryStaticMetrics.cachedMemory;
+                metrics.PagedPool = memoryStaticMetrics.pagedPool;
+                metrics.NonPagedPool = memoryStaticMetrics.nonPagedPool;
+
+                return metrics;
+            }, token);
+
+            if (token.IsCancellationRequested)
             {
                 return;
             }
 
-            if (disposing)
-            {
-                StopMonitoring();
-            }
-
-            disposed = true;
-        }
-
-        private void LoadStaticMemoryMetrics()
-        {
-            var memoryMetrics = new MemoryInfoViewModel();
-            var memoryDetails = GetMemoryDetails();
-            var memoryStaticMetrics = GetStaticMemoryMetrics();
-            memoryMetrics.Speed = memoryDetails.memorySpeed;
-            memoryMetrics.SlotsUsed = memoryDetails.slotsUsed;
-            memoryMetrics.FormFactor = memoryDetails.formFactor;
-            memoryMetrics.CommittedMemory = memoryStaticMetrics.committedMemory;
-            memoryMetrics.CachedMemory = memoryStaticMetrics.cachedMemory;
-            memoryMetrics.PagedPool = memoryStaticMetrics.pagedPool;
-            memoryMetrics.NonPagedPool = memoryStaticMetrics.nonPagedPool;
-
-            Application.Current.Dispatcher.Invoke(() =>
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 MemoryModel.Add(memoryMetrics);
                 OnPropertyChanged(nameof(LatestMemoryModel));
@@ -94,7 +102,6 @@ namespace TaskManager.ViewModels
 
         private async Task LoadDynamicMemoryMetricsAsync(CancellationToken token)
         {
-            cancellationTokenSource = new CancellationTokenSource();
             while (!token.IsCancellationRequested)
             {
                 var memoryMetrics = LatestMemoryModel;
@@ -107,7 +114,7 @@ namespace TaskManager.ViewModels
                 memoryMetrics.TotalMemory = totalMemory;
                 memoryMetrics.InUseMemory = inUseMemory;
                 memoryMetrics.AvailableMemory = availableMemory;
-                Application.Current.Dispatcher.Invoke(() =>
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     MemoryUsageSeries[0].Values.Add(new ObservableValue(memoryMetrics.InUseMemory));
                     if (MemoryUsageSeries[0].Values.Count > 60)

@@ -13,15 +13,15 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class DiskViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class DiskViewModel : BaseViewModel, ILoadableViewModel
     {
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
         private PerformanceCounter diskReadCounter;
         private PerformanceCounter diskWriteCounter;
         private PerformanceCounter diskAvgTimeCounter;
         private PerformanceCounter diskAvgWriteTimeCounter;
         private PerformanceCounter diskTimeCounter;
+        private Task runningTask;
 
         public DiskViewModel(string deviceId, string displayName)
         {
@@ -36,10 +36,6 @@ namespace TaskManager.ViewModels
                         PointGeometry = null
                     }
             };
-            cancellationTokenSource = new CancellationTokenSource();
-            LoadStaticDiskMetrics();
-            InitializePerformanceCounters();
-            LoadDynamicDiskMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string DeviceId { get; }
@@ -52,42 +48,39 @@ namespace TaskManager.ViewModels
 
         public DiskInfoViewModel LatestDiskModel => DiskModel.LastOrDefault();
 
-        public void StopMonitoring()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            if (cancellationTokenSource == null)
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            InitializePerformanceCounters();
+            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            await runningTask;
+        }
+
+        public void OnNavigatedFrom()
+        {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            diskReadCounter?.Dispose();
+            diskWriteCounter?.Dispose();
+            diskAvgTimeCounter?.Dispose();
+            diskAvgWriteTimeCounter?.Dispose();
+            diskTimeCounter?.Dispose();
+            DiskModel.Clear();
+
+            if (runningTask == null)
             {
                 return;
             }
 
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
-            cancellationTokenSource = null;
+            runningTask = null;
         }
 
-        public void Dispose()
+        private async Task LoadDataAsync(CancellationToken token)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            if (disposing)
-            {
-                StopMonitoring();
-                diskReadCounter?.Dispose();
-                diskWriteCounter?.Dispose();
-                diskAvgTimeCounter?.Dispose();
-                diskAvgWriteTimeCounter?.Dispose();
-                diskTimeCounter?.Dispose();
-            }
-
-            disposed = true;
+            await LoadStaticDiskMetricsAsync(token);
+            await LoadDynamicDiskMetricsAsync(token);
         }
 
         private void InitializePerformanceCounters()
@@ -99,19 +92,38 @@ namespace TaskManager.ViewModels
             diskTimeCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
         }
 
-        private void LoadStaticDiskMetrics()
+        private async Task LoadStaticDiskMetricsAsync(CancellationToken token)
         {
-            var diskMetrics = new DiskInfoViewModel
+            var diskMetrics = await Task.Run(
+                () =>
             {
-                Model = GetDiskModel(),
-                Capacity = GetCapacity(),
-                Formatted = IsFormatted(),
-                SystemDisk = GetLogicalDrivesForDeviceId(DeviceId).Contains("C:") ? "yes" : "no",
-                PageFile = IsPageFile()
-            };
+                if (token.IsCancellationRequested)
+                {
+                    return null;
+                }
 
-            Application.Current.Dispatcher.Invoke(() =>
+                return new DiskInfoViewModel
+                {
+                    Model = GetDiskModel(),
+                    Capacity = GetCapacity(),
+                    Formatted = IsFormatted(),
+                    SystemDisk = GetLogicalDrivesForDeviceId(DeviceId).Contains("C:") ? "yes" : "no",
+                    PageFile = IsPageFile()
+                };
+            }, token);
+
+            if (token.IsCancellationRequested)
             {
+                return;
+            }
+
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (diskMetrics == null)
+                {
+                    return;
+                }
+
                 DiskModel.Add(diskMetrics);
                 OnPropertyChanged(nameof(LatestDiskModel));
             });
@@ -119,13 +131,12 @@ namespace TaskManager.ViewModels
 
         private async Task LoadDynamicDiskMetricsAsync(CancellationToken token)
         {
-            cancellationTokenSource = new CancellationTokenSource();
             diskReadCounter.NextValue();
             diskWriteCounter.NextValue();
             diskAvgTimeCounter.NextValue();
             while (!token.IsCancellationRequested)
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var diskMetrics = LatestDiskModel;
                     if (diskMetrics == null)

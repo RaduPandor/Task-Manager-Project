@@ -13,10 +13,11 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class CPUViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class CPUViewModel : BaseViewModel, ILoadableViewModel
     {
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
+        private PerformanceCounter cpuCounter;
+        private Task runningTask;
 
         public CPUViewModel()
         {
@@ -29,9 +30,6 @@ namespace TaskManager.ViewModels
                         PointGeometry = null
                     }
             };
-            cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(() => LoadStaticCPUMetricsAsync());
-            LoadDynamicCPUMetricsAsync(cancellationTokenSource.Token);
         }
 
         public ObservableCollection<CPUInfoViewModel> CPUData { get; }
@@ -40,37 +38,28 @@ namespace TaskManager.ViewModels
 
         public CPUInfoViewModel LatestCPUModel => CPUData.LastOrDefault();
 
-        public void StopMonitoring()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            if (cancellationTokenSource == null)
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            await runningTask;
+        }
+
+        public void OnNavigatedFrom()
+        {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            cpuCounter?.Dispose();
+            CPUData.Clear();
+            if (runningTask == null)
             {
                 return;
             }
 
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
-            cancellationTokenSource = null;
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            if (disposing)
-            {
-                StopMonitoring();
-            }
-
-            disposed = true;
+            runningTask = null;
         }
 
         private static double ConvertToDouble(object value)
@@ -88,10 +77,22 @@ namespace TaskManager.ViewModels
             return value != null && Convert.ToBoolean(value);
         }
 
-        private async Task LoadStaticCPUMetricsAsync()
+        private async Task LoadDataAsync(CancellationToken token)
         {
-            var cpuMetrics = await Task.Run(() =>
+            await LoadStaticCPUMetricsAsync(token);
+            await LoadDynamicCPUMetricsAsync(token);
+        }
+
+        private async Task LoadStaticCPUMetricsAsync(CancellationToken token)
+        {
+            var cpuMetrics = await Task.Run(
+                () =>
             {
+                if (token.IsCancellationRequested)
+                {
+                    return null;
+                }
+
                 var metrics = new CPUInfoViewModel();
                 using (var searcher = new ManagementObjectSearcher(
                     "SELECT Name, MaxClockSpeed, NumberOfCores, L2CacheSize, L3CacheSize, VirtualizationFirmwareEnabled FROM Win32_Processor"))
@@ -113,15 +114,18 @@ namespace TaskManager.ViewModels
                 }
 
                 return metrics;
-            });
+            }, token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
 
             await Application.Current.Dispatcher.InvokeAsync(() => CPUData.Add(cpuMetrics));
         }
 
         private async Task LoadDynamicCPUMetricsAsync(CancellationToken token)
         {
-            using var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-
             while (!token.IsCancellationRequested)
             {
                 var cpuUsage = Math.Round(cpuCounter.NextValue(), 2);

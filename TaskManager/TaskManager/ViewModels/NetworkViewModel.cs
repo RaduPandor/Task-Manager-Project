@@ -12,14 +12,14 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class NetworkViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class NetworkViewModel : BaseViewModel, ILoadableViewModel
     {
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
         private PerformanceCounter networkSentCounter;
         private PerformanceCounter networkReceivedCounter;
         private ulong previousBytesSent;
         private ulong previousBytesReceived;
+        private Task runningTask;
 
         public NetworkViewModel(string adapterName)
         {
@@ -33,10 +33,6 @@ namespace TaskManager.ViewModels
                     PointGeometry = null
                 }
             };
-            cancellationTokenSource = new CancellationTokenSource();
-            LoadStaticNetworkMetrics();
-            InitializePerformanceCounters();
-            LoadDynamicNetworkMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string AdapterName { get; }
@@ -47,39 +43,35 @@ namespace TaskManager.ViewModels
 
         public NetworkInfoViewModel LatestNetworkModel => NetworkModels.LastOrDefault();
 
-        public void StopMonitoring()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            if (cancellationTokenSource == null)
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            InitializePerformanceCounters();
+            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            await runningTask;
+        }
+
+        public void OnNavigatedFrom()
+        {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            networkSentCounter?.Dispose();
+            networkReceivedCounter?.Dispose();
+            NetworkModels.Clear();
+            if (runningTask == null)
             {
                 return;
             }
 
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
-            cancellationTokenSource = null;
+            runningTask = null;
         }
 
-        public void Dispose()
+        private async Task LoadDataAsync(CancellationToken token)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            if (disposing)
-            {
-                StopMonitoring();
-                networkSentCounter?.Dispose();
-                networkReceivedCounter?.Dispose();
-            }
-
-            disposed = true;
+            await LoadStaticNetworkMetricsAsync(token);
+            await LoadDynamicNetworkMetricsAsync(token);
         }
 
         private void InitializePerformanceCounters()
@@ -88,21 +80,44 @@ namespace TaskManager.ViewModels
             networkReceivedCounter = new PerformanceCounter("Network Interface", "Bytes Received/sec", AdapterName);
         }
 
-        private void LoadStaticNetworkMetrics()
+        private async Task LoadStaticNetworkMetricsAsync(CancellationToken token)
         {
-            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-            var networkInterface = networkInterfaces.FirstOrDefault(nic => nic.Name == AdapterName);
-            var networkMetrics = new NetworkInfoViewModel
+            var networkMetrics = await Task.Run(
+                () =>
             {
-                DisplayName = AdapterName,
-                Description = networkInterface.Description,
-                IPv4Adress = GetIPv4Address(),
-                IPv6Adress = GetIPv6Address(),
-                ConnectionType = GetConnectionType()
-            };
+                if (token.IsCancellationRequested)
+                {
+                    return null;
+                }
 
-            App.Current.Dispatcher.Invoke(() =>
+                var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
+                var networkInterface = networkInterfaces.FirstOrDefault(nic => nic.Name == AdapterName);
+                if (networkInterface == null)
+                {
+                    return null;
+                }
+
+                return new NetworkInfoViewModel
+                {
+                    DisplayName = AdapterName,
+                    Description = networkInterface.Description,
+                    IPv4Adress = GetIPv4Address(),
+                    IPv6Adress = GetIPv6Address(),
+                    ConnectionType = GetConnectionType()
+                };
+            }, token);
+            if (token.IsCancellationRequested)
             {
+                return;
+            }
+
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (networkMetrics == null)
+                {
+                    return;
+                }
+
                 NetworkModels.Add(networkMetrics);
                 OnPropertyChanged(nameof(LatestNetworkModel));
             });
@@ -112,8 +127,15 @@ namespace TaskManager.ViewModels
         {
             while (!token.IsCancellationRequested)
             {
-                App.Current.Dispatcher.Invoke(UpdateNetworkMetrics);
-                await Task.Delay(1000, token);
+                await App.Current.Dispatcher.InvokeAsync(UpdateNetworkMetrics);
+                try
+                {
+                    await Task.Delay(1000, token);
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
             }
         }
 

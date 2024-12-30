@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Management;
 using System.Net.NetworkInformation;
+using System.Threading;
 using System.Windows.Input;
 using TaskManager.Models;
 using TaskManager.Services;
@@ -48,7 +49,18 @@ namespace TaskManager.ViewModels
             get => currentView;
             set
             {
+                if (currentView is ILoadableViewModel oldLoadable)
+                {
+                    oldLoadable.OnNavigatedFrom();
+                }
+
                 currentView = value;
+                if (currentView is ILoadableViewModel newLoadable)
+                {
+                    using var cancellationTokenSource = new CancellationTokenSource();
+                    newLoadable.OnNavigatedToAsync(cancellationTokenSource.Token);
+                }
+
                 OnPropertyChanged(nameof(CurrentView));
             }
         }

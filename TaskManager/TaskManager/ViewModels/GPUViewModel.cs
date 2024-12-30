@@ -14,11 +14,11 @@ using TaskManager.Services;
 
 namespace TaskManager.ViewModels
 {
-    public class GPUViewModel : BaseViewModel, ICancellableViewModel, IDisposable
+    public class GPUViewModel : BaseViewModel, ILoadableViewModel
     {
         private readonly Computer computer;
-        private CancellationTokenSource cancellationTokenSource;
-        private bool disposed;
+        private CancellationTokenSource linkedCancellationTokenSource;
+        private Task runningTask;
 
         public GPUViewModel(string deviceId, string displayName)
         {
@@ -35,9 +35,6 @@ namespace TaskManager.ViewModels
                     PointGeometry = null
                 }
             };
-            cancellationTokenSource = new CancellationTokenSource();
-            LoadStaticGpuMetrics();
-            LoadDynamicGpuMetricsAsync(cancellationTokenSource.Token);
         }
 
         public string DeviceId { get; }
@@ -50,70 +47,85 @@ namespace TaskManager.ViewModels
 
         public GPUInfoViewModel LatestGpuModel => GpuModel.LastOrDefault();
 
-        public void StopMonitoring()
+        public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            if (cancellationTokenSource == null)
+            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            CancellationToken token = linkedCancellationTokenSource.Token;
+            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            await runningTask;
+        }
+
+        public void OnNavigatedFrom()
+        {
+            linkedCancellationTokenSource?.Cancel();
+            linkedCancellationTokenSource?.Dispose();
+            linkedCancellationTokenSource = null;
+            computer.Close();
+            GpuModel.Clear();
+            if (runningTask == null)
             {
                 return;
             }
 
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
-            cancellationTokenSource = null;
+            runningTask = null;
         }
 
-        public void Dispose()
+        private async Task LoadDataAsync(CancellationToken token)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            await LoadStaticGpuMetricsAsync(token);
+            await LoadDynamicGpuMetricsAsync(token);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private async Task LoadStaticGpuMetricsAsync(CancellationToken token)
         {
-            if (disposed)
+            var gpuMetrics = await Task.Run(
+                () =>
             {
-                return;
-            }
-
-            if (disposing)
-            {
-                StopMonitoring();
-                computer.Close();
-            }
-
-            disposed = true;
-        }
-
-        private void LoadStaticGpuMetrics()
-        {
-            using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
-            {
-                var gpuObjects = searcher.Get().Cast<ManagementObject>().ToList();
-                var primaryGpu = gpuObjects.FirstOrDefault(obj => obj["DeviceID"].ToString() == DeviceId);
-
-                if (primaryGpu != null)
+                if (token.IsCancellationRequested)
                 {
-                    var gpuMetrics = new GPUInfoViewModel
-                    {
-                        Model = primaryGpu["Name"]?.ToString() ?? " ",
-                        DriverVersion = primaryGpu["DriverVersion"]?.ToString() ?? " ",
-                        DriverDate = TryParseDriverDate(primaryGpu["DriverDate"]?.ToString()),
-                        DirectXVersion = GetDirectXVersion(),
-                        PhysicalLocation = primaryGpu["DeviceID"]?.ToString() ?? " "
-                    };
-
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        GpuModel.Add(gpuMetrics);
-                        OnPropertyChanged(nameof(LatestGpuModel));
-                    });
+                    return null;
                 }
+
+                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
+                {
+                    var gpuObjects = searcher.Get().Cast<ManagementObject>().ToList();
+                    var primaryGpu = gpuObjects.FirstOrDefault(obj => obj["DeviceID"].ToString() == DeviceId);
+
+                    if (primaryGpu != null)
+                    {
+                        return new GPUInfoViewModel
+                        {
+                            Model = primaryGpu["Name"]?.ToString() ?? " ",
+                            DriverVersion = primaryGpu["DriverVersion"]?.ToString() ?? " ",
+                            DriverDate = TryParseDriverDate(primaryGpu["DriverDate"]?.ToString()),
+                            DirectXVersion = GetDirectXVersion(),
+                            PhysicalLocation = primaryGpu["DeviceID"]?.ToString() ?? " "
+                        };
+                    }
+
+                    return null;
+                }
+            }, token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
             }
+
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (gpuMetrics == null)
+                {
+                    return;
+                }
+
+                GpuModel.Add(gpuMetrics);
+                OnPropertyChanged(nameof(LatestGpuModel));
+            });
         }
 
         private async Task LoadDynamicGpuMetricsAsync(CancellationToken token)
         {
-            cancellationTokenSource = new CancellationTokenSource();
             while (!token.IsCancellationRequested)
             {
                 foreach (var hardware in computer.Hardware)
@@ -121,7 +133,7 @@ namespace TaskManager.ViewModels
                     hardware.Update();
                 }
 
-                Application.Current.Dispatcher.Invoke(() =>
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     var gpuMetrics = LatestGpuModel;
                     if (gpuMetrics == null)

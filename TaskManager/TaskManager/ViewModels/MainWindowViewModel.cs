@@ -64,9 +64,9 @@ namespace TaskManager.ViewModels
             get => currentView;
             set
             {
-                if (currentView is ICancellableViewModel cancellableViewModel)
+                if (currentView is ILoadableViewModel loadableCurrentView)
                 {
-                    cancellableViewModel.StopMonitoring();
+                    loadableCurrentView.OnNavigatedFrom();
                 }
 
                 currentView = value;
