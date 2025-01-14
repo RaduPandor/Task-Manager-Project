@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TaskManager.ViewModels
+﻿namespace TaskManager.ViewModels
 {
     public class ProcessViewModel : BaseViewModel
     {

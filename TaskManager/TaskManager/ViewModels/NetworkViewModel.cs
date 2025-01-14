@@ -1,7 +1,6 @@
 ﻿using LiveCharts;
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
-using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;

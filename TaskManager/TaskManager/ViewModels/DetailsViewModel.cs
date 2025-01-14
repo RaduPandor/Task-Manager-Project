@@ -71,7 +71,7 @@ namespace TaskManager.ViewModels
                     Id = process.Id,
                     Status = process.Responding ? "Running" : "Suspended",
                     UserName = performanceMetricsService.GetProcessOwner(process.Id),
-                    CpuUsage = "0",
+                    CpuUsage = 0,
                     MemoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3),
                     Architecture = Environment.Is64BitProcess ? "x64" : "x86",
                     Description = GetProcessDescription(process)
@@ -105,12 +105,12 @@ namespace TaskManager.ViewModels
                         var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
                         var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 3);
 
-                        if (Math.Abs(double.Parse(processModel.CpuUsage) - cpuUsage) > 0.1 ||
+                        if (Math.Abs(processModel.CpuUsage - cpuUsage) > 0.1 ||
                               Math.Abs(processModel.MemoryUsage - memoryUsage) > 50)
                         {
                             await App.Current.Dispatcher.InvokeAsync(() =>
                             {
-                                processModel.CpuUsage = cpuUsage.ToString();
+                                processModel.CpuUsage = cpuUsage;
                                 processModel.MemoryUsage = memoryUsage;
                             });
                         }

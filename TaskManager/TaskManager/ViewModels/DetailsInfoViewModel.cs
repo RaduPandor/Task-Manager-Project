@@ -4,7 +4,7 @@ namespace TaskManager.ViewModels
 {
     public class DetailsInfoViewModel : BaseViewModel
     {
-        private string cpuUsage;
+        private double cpuUsage;
         private double memoryUsage;
 
         public string Name { get; set; }
@@ -15,18 +15,13 @@ namespace TaskManager.ViewModels
 
         public string UserName { get; set; }
 
-        public string CpuUsage
+        public double CpuUsage
         {
             get => cpuUsage;
             set
             {
-                if (cpuUsage == value)
-                {
-                    return;
-                }
-
                 cpuUsage = value;
-                OnPropertyChanged(nameof(Name));
+                OnPropertyChanged(nameof(CpuUsage));
             }
         }
 

@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Drawing;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -7,7 +6,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -44,7 +42,7 @@ namespace TaskManager.ViewModels
         {
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
-            runningTask = Task.Run( async () => await LoadUsersAsync(token), token);
+            runningTask = Task.Run(async () => await LoadUsersAsync(token), token);
             await runningTask;
         }
 

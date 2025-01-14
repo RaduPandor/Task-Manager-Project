@@ -1,6 +1,5 @@
 ﻿using Moq;
 using System.Collections.Specialized;
-using TaskManager.Models;
 using TaskManager.Services;
 using TaskManager.ViewModels;
 
