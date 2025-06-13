@@ -11,7 +11,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <TextBlock Text="Processes" FontSize="14" FontWeight="Bold" Margin="10" FontFamily="Bahnschrift SemiBold SemiCondensed" Grid.Row="0"/>
-        <DataGrid ItemsSource="{Binding Processes}" Style="{StaticResource MainDataGrid}">
+        <DataGrid ItemsSource="{Binding Processes}" Style="{StaticResource MainDataGrid}"
+                  SelectedItem="{Binding SelectedProcess, Mode=TwoWay}">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="End Task" Command="{Binding EndTaskCommand}" CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
                 <DataGridTextColumn Header="CPU" Binding="{Binding CpuUsage, StringFormat={}{0} %}" Width="70">

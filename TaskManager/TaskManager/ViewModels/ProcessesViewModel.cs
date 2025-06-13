@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -15,6 +16,8 @@ namespace TaskManager.ViewModels
         private readonly PerformanceMetricsService performanceMetricsService;
         private CancellationTokenSource linkedCancellationTokenSource;
         private Task runningTask;
+        private ProcessViewModel selectedProcess;
+        private ICommand endTaskCommand;
 
         public ProcessesViewModel(PerformanceMetricsService performanceMetricsService)
         {
@@ -23,6 +26,14 @@ namespace TaskManager.ViewModels
         }
 
         public ObservableCollection<ProcessViewModel> Processes { get; }
+
+        public ICommand EndTaskCommand => endTaskCommand ??= new RelayCommand<ProcessViewModel>(EndTask, CanEndTask);
+
+        public ProcessViewModel SelectedProcess
+        {
+            get => selectedProcess;
+            set => SetProperty(ref selectedProcess, value);
+        }
 
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
@@ -167,6 +178,22 @@ namespace TaskManager.ViewModels
             catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
             {
                 return false;
+            }
+        }
+
+        private bool CanEndTask(ProcessViewModel process) => process != null;
+
+        private void EndTask(ProcessViewModel process)
+        {
+            try
+            {
+                var p = Process.GetProcessById(process.Id);
+                p.Kill();
+                Processes.Remove(process);
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
+            {
+                Debug.WriteLine($"Could not end task {process?.Name}: {ex.Message}");
             }
         }
     }
