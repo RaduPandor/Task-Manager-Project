@@ -13,6 +13,7 @@ namespace TaskManager.Services
         private const uint TokenUser = 1;
         private readonly INativeMethodsService nativeMethodsService;
         private readonly ConcurrentDictionary<int, PerformanceCounter> cpuCounters = new ();
+        private readonly int processorCount = Environment.ProcessorCount;
 
         public PerformanceMetricsService(INativeMethodsService nativeMethods)
         {
@@ -40,7 +41,8 @@ namespace TaskManager.Services
 
             try
             {
-                return Math.Round(cpuCounter.NextValue(), 1);
+                double rawValue = cpuCounter.NextValue();
+                return Math.Round(rawValue / processorCount, 1);
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {

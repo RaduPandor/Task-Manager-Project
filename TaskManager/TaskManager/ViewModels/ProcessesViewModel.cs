@@ -40,7 +40,6 @@ namespace TaskManager.ViewModels
             linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
             CancellationToken token = linkedCancellationTokenSource.Token;
             runningTask = Task.Run(async () => await LoadProcessesAsync(token));
-            await runningTask;
         }
 
         public void OnNavigatedFrom()
@@ -115,19 +114,13 @@ namespace TaskManager.ViewModels
                         var diskUsage = await performanceMetricsService.GetDiskUsageAsync(process);
                         var networkUsage = await performanceMetricsService.GetNetworkUsageAsync();
 
-                        if (Math.Abs(processModel.CpuUsage - cpuUsage) > 0.1 ||
-                             Math.Abs(processModel.MemoryUsage - memoryUsage) > 50 ||
-                             Math.Abs(processModel.NetworkUsage - networkUsage) > 0.1 ||
-                             Math.Abs(processModel.DiskUsage - diskUsage) > 0.1)
+                        await App.Current.Dispatcher.InvokeAsync(() =>
                         {
-                            await App.Current.Dispatcher.InvokeAsync(() =>
-                            {
-                                processModel.CpuUsage = cpuUsage;
-                                processModel.MemoryUsage = memoryUsage;
-                                processModel.NetworkUsage = networkUsage;
-                                processModel.DiskUsage = diskUsage;
-                            });
-                        }
+                            processModel.CpuUsage = cpuUsage;
+                            processModel.MemoryUsage = memoryUsage;
+                            processModel.NetworkUsage = networkUsage;
+                            processModel.DiskUsage = diskUsage;
+                        });
 
                         if (!token.IsCancellationRequested)
                         {

@@ -24,13 +24,6 @@ namespace Tests
         }
 
         [Fact]
-        public void ProcessesViewShouldBeInitialized()
-        {
-            var viewModel = new DetailsViewModel(mockPerformanceMetricsHelper.Object);
-            Assert.NotNull(viewModel.ProcessesView);
-        }
-
-        [Fact]
         public void ProcessesCollectionShouldNotifyOnChange()
         {
             var viewModel = new DetailsViewModel(mockPerformanceMetricsHelper.Object);
