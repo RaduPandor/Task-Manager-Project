@@ -1,4 +1,5 @@
 ﻿using Moq;
+using System.Diagnostics;
 using TaskManager.Services;
 using TaskManager.ViewModels;
 
@@ -6,18 +7,23 @@ namespace Tests
 {
     public class UsersViewModelTests
     {
-        private readonly Mock<PerformanceMetricsService> mockPerformanceMetricsHelper;
-
-        public UsersViewModelTests()
-        {
-            mockPerformanceMetricsHelper = new Mock<PerformanceMetricsService>(MockBehavior.Strict, new NativeMethodsService());
-        }
-
         [Fact]
-        public async Task LoadUsersAsyncShouldAddUsers()
+        public async Task LoadUsersAsyncAddsUsersCorrectly()
         {
-            var viewModel = new UsersViewModel(mockPerformanceMetricsHelper.Object);
-            Assert.NotEmpty(viewModel.Users);
+            var mockPerf = new Mock<IPerformanceMetricsService>();
+            var mockProcessProvider = new Mock<IProcessProvider>();
+            var realProcesses = Process.GetProcesses().Take(2).ToArray();
+
+            mockProcessProvider.Setup(p => p.GetProcesses()).Returns(realProcesses);
+
+            mockPerf.Setup(p => p.GetProcessOwner(It.IsAny<int>())).Returns("testuser");
+
+            var vm = new UsersViewModel(mockPerf.Object, mockProcessProvider.Object);
+            await vm.OnNavigatedToAsync(CancellationToken.None);
+
+            Assert.Equal(1, vm.Users.Count);
+            Assert.Equal("testuser", vm.Users[0].UserName);
+            Assert.Equal(2, vm.Users[0].Processes.Count);
         }
     }
 }

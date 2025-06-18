@@ -12,13 +12,15 @@ namespace TaskManager.ViewModels
 {
     public class UsersViewModel : BaseViewModel, ILoadableViewModel
     {
-        private readonly PerformanceMetricsService performanceMetricsService;
+        private readonly IPerformanceMetricsService performanceMetricsService;
+        private readonly IProcessProvider processProvider;
         private CancellationTokenSource linkedCancellationTokenSource;
         private Task runningTask;
 
-        public UsersViewModel(PerformanceMetricsService performanceMetricsService)
+        public UsersViewModel(IPerformanceMetricsService performanceMetricsService, IProcessProvider processProvider)
         {
             this.performanceMetricsService = performanceMetricsService;
+            this.processProvider = processProvider;
             Users = new ObservableCollection<UserViewModel>();
         }
 
@@ -48,7 +50,7 @@ namespace TaskManager.ViewModels
 
         private async Task LoadUsersAsync(CancellationToken token)
         {
-            var processes = Process.GetProcesses()
+            var processes = processProvider.GetProcesses()
                 .GroupBy(p => performanceMetricsService.GetProcessOwner(p.Id))
                 .Where(g => !string.IsNullOrWhiteSpace(g.Key) && !IsSystemUser(g.Key))
                 .ToList();
@@ -60,7 +62,15 @@ namespace TaskManager.ViewModels
                 var userName = group.Key;
                 var processCount = group.Count();
                 var userModel = new UserViewModel(userName, processCount);
-                System.Windows.Application.Current.Dispatcher.Invoke(() => Users.Add(userModel));
+                if (System.Windows.Application.Current?.Dispatcher != null)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => Users.Add(userModel));
+                }
+                else
+                {
+                    Users.Add(userModel);
+                }
+
                 var loadMetricsTask = LoadDynamicUserMetricsAsync(userModel, group, token);
                 tasks.Add(loadMetricsTask);
             }
@@ -103,13 +113,23 @@ namespace TaskManager.ViewModels
                 var totalDiskUsage = userModel.Processes.Sum(p => p.DiskUsage);
                 var totalNetworkUsage = userModel.Processes.Sum(p => p.NetworkUsage);
 
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                if (System.Windows.Application.Current?.Dispatcher != null)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        userModel.TotalMemoryUsage = totalMemoryUsage;
+                        userModel.TotalCpuUsage = totalCpuUsage;
+                        userModel.TotalDiskUsage = totalDiskUsage;
+                        userModel.TotalNetworkUsage = totalNetworkUsage;
+                    });
+                }
+                else
                 {
                     userModel.TotalMemoryUsage = totalMemoryUsage;
                     userModel.TotalCpuUsage = totalCpuUsage;
                     userModel.TotalDiskUsage = totalDiskUsage;
                     userModel.TotalNetworkUsage = totalNetworkUsage;
-                });
+                }
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
             {

@@ -32,7 +32,7 @@ namespace TaskManager.Services
                 return $"{name}";
             }
 
-            return " ";
+            return string.Empty;
         }
 
         [StructLayout(LayoutKind.Sequential)]

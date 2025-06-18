@@ -8,13 +8,14 @@ namespace Tests
     {
         private readonly PerformanceMetricsService performanceMetricsHelper;
         private readonly WindowCommands windowCommands;
+        private readonly ProcessProvider processProvider;
         private readonly MainWindowViewModel mainWindowViewModel;
 
         public MainWindowViewModelFacts()
         {
             performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
             windowCommands = new WindowCommands();
-            mainWindowViewModel = new MainWindowViewModel(performanceMetricsHelper, windowCommands);
+            mainWindowViewModel = new MainWindowViewModel(performanceMetricsHelper, windowCommands, processProvider);
         }
 
         [Fact]

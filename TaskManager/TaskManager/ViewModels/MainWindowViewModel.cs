@@ -16,7 +16,10 @@ namespace TaskManager.ViewModels
         private bool isMenuVisible = true;
         private bool isLoading;
 
-        public MainWindowViewModel(IPerformanceMetricsService performanceMetricsService, IWindowCommands windowCommands)
+        public MainWindowViewModel(
+            IPerformanceMetricsService performanceMetricsService,
+            IWindowCommands windowCommands,
+            IProcessProvider processProvider)
         {
             this.performanceMetricsService = (PerformanceMetricsService)performanceMetricsService;
             this.windowCommands = (WindowCommands)windowCommands;
@@ -25,13 +28,13 @@ namespace TaskManager.ViewModels
             CloseCommand = windowCommands.CloseCommand;
             DragMoveCommand = windowCommands.DragMoveCommand;
             ToggleMenuCommand = new RelayCommand<object>(param => ToggleMenu());
-            ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsService));
+            ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsService, processProvider));
             ShowPerformance = Show(() => new PerformanceViewModel());
             ShowDetails = Show(() => new DetailsViewModel(this.performanceMetricsService));
             ShowServices = Show(() => new ServicesViewModel());
             ShowStartup = Show(() => new StartupViewModel());
             ShowAppHistory = Show(() => new AppHistoryViewModel(this.performanceMetricsService));
-            ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsService));
+            ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsService, processProvider));
             ShowProcesses.Execute(null);
         }
 

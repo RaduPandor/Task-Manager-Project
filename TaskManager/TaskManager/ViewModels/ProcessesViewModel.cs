@@ -13,15 +13,17 @@ namespace TaskManager.ViewModels
 {
     public class ProcessesViewModel : BaseViewModel, ILoadableViewModel
     {
-        private readonly PerformanceMetricsService performanceMetricsService;
+        private readonly IPerformanceMetricsService performanceMetricsService;
+        private readonly IProcessProvider processProvider;
         private CancellationTokenSource linkedCancellationTokenSource;
         private Task runningTask;
         private ProcessViewModel selectedProcess;
         private ICommand endTaskCommand;
 
-        public ProcessesViewModel(PerformanceMetricsService performanceMetricsService)
+        public ProcessesViewModel(IPerformanceMetricsService performanceMetricsService, IProcessProvider processProvider)
         {
             this.performanceMetricsService = performanceMetricsService;
+            this.processProvider = processProvider;
             Processes = new ObservableCollection<ProcessViewModel>();
         }
 
@@ -58,7 +60,7 @@ namespace TaskManager.ViewModels
 
         private async Task LoadProcessesAsync(CancellationToken token)
         {
-            var processes = Process.GetProcesses();
+            var processes = processProvider.GetProcesses();
             var filteredProcesses = IsRunningAsAdmin()
               ? processes.Where(p => HasPermissionToAccessProcess(p))
                : processes.Where(p =>
