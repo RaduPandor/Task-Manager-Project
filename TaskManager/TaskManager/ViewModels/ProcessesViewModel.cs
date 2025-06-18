@@ -111,6 +111,11 @@ namespace TaskManager.ViewModels
 
                     while (!token.IsCancellationRequested && !process.HasExited)
                     {
+                        if (App.Current?.Dispatcher == null)
+                        {
+                            return;
+                        }
+
                         var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
                         var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
                         var diskUsage = await performanceMetricsService.GetDiskUsageAsync(process);
