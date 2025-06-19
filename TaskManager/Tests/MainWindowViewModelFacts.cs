@@ -1,3 +1,4 @@
+using Moq;
 using System.Windows;
 using TaskManager.Services;
 using TaskManager.ViewModels;
@@ -9,13 +10,26 @@ namespace Tests
         private readonly PerformanceMetricsService performanceMetricsHelper;
         private readonly WindowCommands windowCommands;
         private readonly ProcessProvider processProvider;
+        private readonly Mock<IServiceManager> mockServiceManager;
+        private readonly Mock<IErrorDialogService> mockErrorDialogService;
         private readonly MainWindowViewModel mainWindowViewModel;
 
         public MainWindowViewModelFacts()
         {
             performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
             windowCommands = new WindowCommands();
-            mainWindowViewModel = new MainWindowViewModel(performanceMetricsHelper, windowCommands, processProvider);
+            processProvider = new ProcessProvider();
+
+            mockServiceManager = new Mock<IServiceManager>();
+            mockErrorDialogService = new Mock<IErrorDialogService>();
+
+            mainWindowViewModel = new MainWindowViewModel(
+                performanceMetricsHelper,
+                windowCommands,
+                processProvider,
+                mockServiceManager.Object,
+                mockErrorDialogService.Object
+            );
         }
 
         [Fact]

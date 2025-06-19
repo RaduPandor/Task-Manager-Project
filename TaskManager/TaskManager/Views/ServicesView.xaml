@@ -12,7 +12,17 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock Text="Services" FontSize="14" FontWeight="Bold" Margin="10" FontFamily="Bahnschrift SemiBold SemiCondensed" Grid.Row="0"/>
-        <DataGrid ItemsSource="{Binding Services}" Style="{StaticResource MainDataGrid}">
+        <DataGrid ItemsSource="{Binding Services}" SelectedItem="{Binding SelectedService, Mode=TwoWay}" Style="{StaticResource MainDataGrid}">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Start" Command="{Binding StartServiceCommand}">
+                    </MenuItem>
+                    <MenuItem Header="Stop" Command="{Binding StopServiceCommand}">
+                    </MenuItem>
+                    <MenuItem Header="Restart" Command="{Binding RestartServiceCommand}">
+                    </MenuItem>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
                 <DataGridTextColumn Header="PID" Binding="{Binding Id}" Width="50"/>

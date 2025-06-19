@@ -1,13 +1,8 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
 using System.Linq;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using TaskManager.Models;
 using TaskManager.Services;
 
@@ -15,151 +10,148 @@ namespace TaskManager.ViewModels
 {
     public class ServicesViewModel : BaseViewModel, ILoadableViewModel
     {
-        private CancellationTokenSource linkedCancellationTokenSource;
-        private Task runningTask;
+        private readonly IServiceManager serviceManager;
+        private readonly IErrorDialogService dialogService;
 
-        public ServicesViewModel()
+        private CancellationTokenSource linkedTokenSource;
+        private Task runningTask;
+        private ServicesModel selectedService;
+
+        public ServicesViewModel(IServiceManager serviceManager, IErrorDialogService dialogService)
         {
+            this.serviceManager = serviceManager;
+            this.dialogService = dialogService;
+
             Services = new ObservableCollection<ServicesModel>();
+
+            StartServiceCommand = new RelayCommand<object>(_ => StartServiceAsync(), _ => CanStartService());
+            StopServiceCommand = new RelayCommand<object>(_ => StopServiceAsync(), _ => CanStopService());
+            RestartServiceCommand = new RelayCommand<object>(_ => RestartServiceAsync(), _ => CanRestartService());
         }
 
         public ObservableCollection<ServicesModel> Services { get; }
 
+        public ServicesModel SelectedService
+        {
+            get => selectedService;
+            set
+            {
+                selectedService = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public ICommand StartServiceCommand { get; }
+
+        public ICommand StopServiceCommand { get; }
+
+        public ICommand RestartServiceCommand { get; }
+
         public async Task OnNavigatedToAsync(CancellationToken rootToken)
         {
-            linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
-            CancellationToken token = linkedCancellationTokenSource.Token;
-            runningTask = Task.Run(async () => await LoadDataAsync(token), token);
+            linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(rootToken);
+            var token = linkedTokenSource.Token;
+            runningTask = LoadDataAsync(token);
             await runningTask;
         }
 
         public void OnNavigatedFrom()
         {
-            linkedCancellationTokenSource?.Cancel();
-            linkedCancellationTokenSource?.Dispose();
-            linkedCancellationTokenSource = null;
-            Services.Clear();
-            if (runningTask == null)
-            {
-                return;
-            }
+            linkedTokenSource?.Cancel();
+            linkedTokenSource?.Dispose();
+            linkedTokenSource = null;
 
+            Services.Clear();
             runningTask = null;
         }
 
         private async Task LoadDataAsync(CancellationToken token)
         {
-            var servicesList = new List<ServicesModel>();
-            var tasks = ServiceController.GetServices().Select(async service =>
+            var serviceList = await serviceManager.GetAllServicesAsync(token);
+
+            App.Current.Dispatcher.Invoke(() =>
             {
-                if (token.IsCancellationRequested)
+                Services.Clear();
+                foreach (var service in serviceList)
                 {
-                    return null;
+                    Services.Add(service);
                 }
-
-                return new ServicesModel
-                {
-                    Name = service.ServiceName,
-                    Id = await GetServiceProcessIdAsync(service.ServiceName),
-                    Description = await GetServiceDescriptionAsync(service.ServiceName),
-                    Status = service.Status.ToString(),
-                    GroupName = await GetServiceGroupNameAsync(service.ServiceName)
-                };
             });
+        }
 
-            var allServices = await Task.WhenAll(tasks);
+        private bool CanStartService() => SelectedService?.Status == "Stopped";
 
-            if (token.IsCancellationRequested)
+        private bool CanStopService() => SelectedService?.Status == "Running";
+
+        private bool CanRestartService() => SelectedService?.Status == "Running";
+
+        private async Task StartServiceAsync()
+        {
+            if (SelectedService == null)
             {
                 return;
             }
 
+            var result = await serviceManager.StartServiceAsync(SelectedService.Name);
+            if (result)
+            {
+                UpdateServiceStatus(SelectedService.Name, "Running");
+            }
+            else
+            {
+                dialogService.ShowError("Failed to start service. Administrator required.");
+            }
+        }
+
+        private async Task StopServiceAsync()
+        {
+            if (SelectedService == null)
+            {
+                return;
+            }
+
+            var result = await serviceManager.StopServiceAsync(SelectedService.Name);
+            if (result)
+            {
+                UpdateServiceStatus(SelectedService.Name, "Stopped");
+            }
+            else
+            {
+                dialogService.ShowError("Failed to stop service. Administrator required.");
+            }
+        }
+
+        private async Task RestartServiceAsync()
+        {
+            if (SelectedService == null)
+            {
+                return;
+            }
+
+            var result = await serviceManager.RestartServiceAsync(SelectedService.Name);
+            if (result)
+            {
+                UpdateServiceStatus(SelectedService.Name, "Running");
+            }
+            else
+            {
+                dialogService.ShowError("Failed to restart service. Administrator required.");
+            }
+        }
+
+        private void UpdateServiceStatus(string serviceName, string newStatus)
+        {
             App.Current.Dispatcher.Invoke(() =>
             {
-                foreach (var serviceModel in allServices.Where(s => s != null))
+                var service = Services.FirstOrDefault(s => s.Name == serviceName);
+                if (service == null)
                 {
-                    Services.Add(serviceModel);
-                }
-            });
-        }
-
-        private async Task<string> GetServiceProcessIdAsync(string serviceName)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    using (var sc = new ServiceController(serviceName))
-                    {
-                        var process = Process.GetProcessesByName(serviceName);
-                        if (process.Length > 0)
-                        {
-                            return process[0].Id.ToString();
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    return string.Empty;
+                    return;
                 }
 
-                return string.Empty;
-            });
-        }
-
-        private async Task<string> GetServiceDescriptionAsync(string serviceName)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
-                    {
-                        if (key != null)
-                        {
-                            object description = key.GetValue("Description");
-                            string descriptionString = description?.ToString() ?? string.Empty;
-                            if (descriptionString.StartsWith("@"))
-                            {
-                                return string.Empty;
-                            }
-
-                            return descriptionString;
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    return string.Empty;
-                }
-
-                return string.Empty;
-            });
-        }
-
-        private async Task<string> GetServiceGroupNameAsync(string serviceName)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceName}";
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
-                    {
-                        if (key != null)
-                        {
-                            object groupName = key.GetValue("Group");
-                            return groupName?.ToString() ?? string.Empty;
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException || ex is UnauthorizedAccessException)
-                {
-                    return string.Empty;
-                }
-
-                return string.Empty;
+                service.Status = newStatus;
+                CommandManager.InvalidateRequerySuggested();
             });
         }
     }

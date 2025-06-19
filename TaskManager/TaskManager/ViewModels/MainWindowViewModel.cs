@@ -19,7 +19,9 @@ namespace TaskManager.ViewModels
         public MainWindowViewModel(
             IPerformanceMetricsService performanceMetricsService,
             IWindowCommands windowCommands,
-            IProcessProvider processProvider)
+            IProcessProvider processProvider,
+            IServiceManager serviceManager,
+            IErrorDialogService errorDialogService)
         {
             this.performanceMetricsService = (PerformanceMetricsService)performanceMetricsService;
             this.windowCommands = (WindowCommands)windowCommands;
@@ -31,7 +33,7 @@ namespace TaskManager.ViewModels
             ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsService, processProvider));
             ShowPerformance = Show(() => new PerformanceViewModel());
             ShowDetails = Show(() => new DetailsViewModel(this.performanceMetricsService));
-            ShowServices = Show(() => new ServicesViewModel());
+            ShowServices = Show(() => new ServicesViewModel(serviceManager, errorDialogService));
             ShowStartup = Show(() => new StartupViewModel());
             ShowAppHistory = Show(() => new AppHistoryViewModel(this.performanceMetricsService));
             ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsService, processProvider));

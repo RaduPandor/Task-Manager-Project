@@ -1,4 +1,11 @@
-﻿using TaskManager.ViewModels;
+﻿using Moq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using TaskManager.Models;
+using TaskManager.Services;
+using TaskManager.ViewModels;
+using Xunit;
 
 namespace Tests
 {
@@ -7,7 +14,11 @@ namespace Tests
         [Fact]
         public async Task LoadServicesAsyncShouldAddServices()
         {
-            var viewModel = new ServicesViewModel();
+            var mockServiceManager = new Mock<IServiceManager>();
+            var mockDialogService = new Mock<IErrorDialogService>();
+
+            var viewModel = new ServicesViewModel(mockServiceManager.Object, mockDialogService.Object);
+
             Assert.NotNull(viewModel.Services);
         }
     }

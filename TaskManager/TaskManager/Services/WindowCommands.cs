@@ -33,7 +33,8 @@ namespace TaskManager.Services
 
         private void Close()
         {
-            Application.Current.MainWindow.Close();
+            var mainWindow = Application.Current?.MainWindow;
+            mainWindow?.Close();
         }
 
         private void DragMove(Window window)

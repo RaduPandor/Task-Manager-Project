@@ -1,15 +1,15 @@
 ﻿namespace TaskManager.Models
 {
-    public record ServicesModel
+    public class ServicesModel : BaseViewModel
     {
-        public string Name { get; init; }
+        public string Name { get; set; }
 
-        public string Id { get; init; }
+        public string Id { get; set; }
 
-        public string Status { get; init; }
+        public string Description { get; set; }
 
-        public string Description { get; init; }
+        public string Status { get; set; }
 
-        public string GroupName { get; init; }
+        public string GroupName { get; set; }
     }
 }

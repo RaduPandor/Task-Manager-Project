@@ -16,6 +16,8 @@ namespace TaskManager
             serviceCollection.AddSingleton<IPerformanceMetricsService, PerformanceMetricsService>();
             serviceCollection.AddSingleton<IMainWindowViewModel, MainWindowViewModel>();
             serviceCollection.AddSingleton<IProcessProvider, ProcessProvider>();
+            serviceCollection.AddSingleton<IServiceManager, ServiceManager>();
+            serviceCollection.AddSingleton<IErrorDialogService, ErrorDialogService>();
             ServiceProvider = serviceCollection.BuildServiceProvider();
         }
 
