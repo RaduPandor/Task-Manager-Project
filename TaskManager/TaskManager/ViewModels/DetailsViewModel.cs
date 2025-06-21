@@ -25,8 +25,6 @@ namespace TaskManager.ViewModels
 
         public ObservableCollection<DetailsInfoViewModel> Processes { get; }
 
-        public ICommand EndTaskCommand => new RelayCommand<DetailsInfoViewModel>(EndTask, CanEndTask);
-
         public void OnNavigatedFrom()
         {
             linkedCancellationTokenSource?.Cancel();
@@ -187,29 +185,6 @@ namespace TaskManager.ViewModels
             catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
             {
                 return false;
-            }
-        }
-
-        private bool CanEndTask(DetailsInfoViewModel process) => process != null;
-
-        private void EndTask(DetailsInfoViewModel selectedProcess)
-        {
-            if (selectedProcess == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var process = Process.GetProcessById(selectedProcess.Id);
-                process.Kill(true);
-                process.WaitForExit();
-
-                App.Current.Dispatcher.Invoke(() => Processes.Remove(selectedProcess));
-            }
-            catch (Exception ex) when (ex is Win32Exception || ex is UnauthorizedAccessException || ex is InvalidOperationException)
-            {
-                Debug.WriteLine($"Failed to end task {selectedProcess.Name}: {ex.Message}");
             }
         }
     }

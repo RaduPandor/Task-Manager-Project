@@ -8,7 +8,6 @@ namespace Tests
     public class MainWindowViewModelFacts
     {
         private readonly PerformanceMetricsService performanceMetricsHelper;
-        private readonly WindowCommands windowCommands;
         private readonly ProcessProvider processProvider;
         private readonly Mock<IServiceManager> mockServiceManager;
         private readonly Mock<IErrorDialogService> mockErrorDialogService;
@@ -17,15 +16,12 @@ namespace Tests
         public MainWindowViewModelFacts()
         {
             performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
-            windowCommands = new WindowCommands();
             processProvider = new ProcessProvider();
-
             mockServiceManager = new Mock<IServiceManager>();
             mockErrorDialogService = new Mock<IErrorDialogService>();
 
             mainWindowViewModel = new MainWindowViewModel(
                 performanceMetricsHelper,
-                windowCommands,
                 processProvider,
                 mockServiceManager.Object,
                 mockErrorDialogService.Object

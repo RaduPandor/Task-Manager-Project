@@ -9,7 +9,6 @@ namespace TaskManager.ViewModels
 {
     public class MainWindowViewModel : BaseViewModel, IMainWindowViewModel
     {
-        private readonly WindowCommands windowCommands;
         private readonly PerformanceMetricsService performanceMetricsService;
         private BaseViewModel currentView;
         private CancellationTokenSource cancellationTokenSource;
@@ -18,17 +17,11 @@ namespace TaskManager.ViewModels
 
         public MainWindowViewModel(
             IPerformanceMetricsService performanceMetricsService,
-            IWindowCommands windowCommands,
             IProcessProvider processProvider,
             IServiceManager serviceManager,
             IErrorDialogService errorDialogService)
         {
             this.performanceMetricsService = (PerformanceMetricsService)performanceMetricsService;
-            this.windowCommands = (WindowCommands)windowCommands;
-            MinimizeCommand = windowCommands.MinimizeCommand;
-            MaximizeCommand = windowCommands.MaximizeCommand;
-            CloseCommand = windowCommands.CloseCommand;
-            DragMoveCommand = windowCommands.DragMoveCommand;
             ToggleMenuCommand = new RelayCommand<object>(param => ToggleMenu());
             ShowProcesses = Show(() => new ProcessesViewModel(this.performanceMetricsService, processProvider));
             ShowPerformance = Show(() => new PerformanceViewModel());
@@ -39,14 +32,6 @@ namespace TaskManager.ViewModels
             ShowUsers = Show(() => new UsersViewModel(this.performanceMetricsService, processProvider));
             ShowProcesses.Execute(null);
         }
-
-        public ICommand MinimizeCommand { get; }
-
-        public ICommand MaximizeCommand { get; }
-
-        public ICommand CloseCommand { get; }
-
-        public ICommand DragMoveCommand { get; }
 
         public ICommand ToggleMenuCommand { get; }
 

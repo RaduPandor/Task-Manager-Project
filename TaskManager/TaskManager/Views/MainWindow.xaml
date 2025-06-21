@@ -10,7 +10,6 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel, IsDesignTimeCreatable=True}"
         Title="Task Manager"
-        WindowStyle="None"
         Height="600" Width="1050"
         MinHeight="400" MinWidth="600"
         WindowStartupLocation="CenterScreen">
@@ -41,26 +40,7 @@
     </Window.Resources>
 
     <Grid>
-        <Border Background="WhiteSmoke" Height="40" HorizontalAlignment="Stretch" VerticalAlignment="Top">
-            <Border.InputBindings>
-                <MouseBinding Gesture="LeftClick" Command="{Binding DragMoveCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"/>
-            </Border.InputBindings>
-            <Grid>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
-                    <Image Source="/Resources\Icons\TaskManagerIcon.png" Width="20" Height="20" Margin="10,0,0,0"/>
-                    <TextBlock Text="Task Manager" VerticalAlignment="Center" Foreground="Black" Margin="10,0,0,0"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <StackPanel.Resources>
-                        <Style TargetType="Button" BasedOn="{StaticResource CommandButtons}"/>
-                    </StackPanel.Resources>
-                    <Button Command="{Binding MinimizeCommand}" Content="-" FontSize="25"/>
-                    <Button Command="{Binding MaximizeCommand}" Content="◻" FontSize="16"/>
-                    <Button Command="{Binding CloseCommand}" Content="X" FontSize="14"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-        <Grid Margin="0,40,0,0">
+        <Grid Margin="0,0,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="40"/>
                 <ColumnDefinition Width="{Binding MenuColumnWidth}"/>
@@ -121,7 +101,7 @@
             <Grid Background="White" Grid.Column="2">
                 <ContentControl Content="{Binding CurrentView}"/>
                 <Grid x:Name="LoadingSpinner" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                    Visibility="{Binding IsLoading, Converter={StaticResource VisibilityConverter}}">
+                      Visibility="{Binding IsLoading, Converter={StaticResource VisibilityConverter}}">
                     <Grid Background="White" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                         <Image HorizontalAlignment="Center" VerticalAlignment="Center" Width="40" Height="40">
                             <wpfAnimatedGif:ImageBehavior.AnimatedSource>

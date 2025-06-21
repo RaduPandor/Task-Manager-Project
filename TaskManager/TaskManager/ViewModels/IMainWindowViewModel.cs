@@ -5,14 +5,6 @@ namespace TaskManager.ViewModels
 {
     public interface IMainWindowViewModel
     {
-        ICommand MinimizeCommand { get; }
-
-        ICommand MaximizeCommand { get; }
-
-        ICommand CloseCommand { get; }
-
-        ICommand DragMoveCommand { get; }
-
         ICommand ToggleMenuCommand { get; }
 
         ICommand ShowProcesses { get; }
