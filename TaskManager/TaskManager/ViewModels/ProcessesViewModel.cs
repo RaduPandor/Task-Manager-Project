@@ -111,23 +111,21 @@ namespace TaskManager.ViewModels
 
                     while (!token.IsCancellationRequested && !process.HasExited)
                     {
-                        if (App.Current?.Dispatcher == null)
-                        {
-                            return;
-                        }
-
                         var cpuUsage = await performanceMetricsService.GetCpuUsageAsync(process);
                         var memoryUsage = Math.Round(process.WorkingSet64 / (1024.0 * 1024.0), 1);
                         var diskUsage = await performanceMetricsService.GetDiskUsageAsync(process);
                         var networkUsage = await performanceMetricsService.GetNetworkUsageAsync();
 
-                        await App.Current.Dispatcher.InvokeAsync(() =>
+                        if (App.Current?.Dispatcher != null)
                         {
-                            processModel.CpuUsage = cpuUsage;
-                            processModel.MemoryUsage = memoryUsage;
-                            processModel.NetworkUsage = networkUsage;
-                            processModel.DiskUsage = diskUsage;
-                        });
+                            await App.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                processModel.CpuUsage = cpuUsage;
+                                processModel.MemoryUsage = memoryUsage;
+                                processModel.NetworkUsage = networkUsage;
+                                processModel.DiskUsage = diskUsage;
+                            });
+                        }
 
                         if (!token.IsCancellationRequested)
                         {
