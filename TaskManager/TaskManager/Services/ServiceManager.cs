@@ -7,15 +7,15 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
-using TaskManager.Models;
+using TaskManager.ViewModels;
 
 namespace TaskManager.Services
 {
     public class ServiceManager : IServiceManager
     {
-        public async Task<List<ServicesModel>> GetAllServicesAsync(CancellationToken token)
+        public async Task<List<ServiceViewModel>> GetAllServicesAsync(CancellationToken token)
         {
-            var list = new List<ServicesModel>();
+            var list = new List<ServiceViewModel>();
             foreach (var service in ServiceController.GetServices())
             {
                 if (token.IsCancellationRequested)
@@ -23,7 +23,7 @@ namespace TaskManager.Services
                     break;
                 }
 
-                var model = new ServicesModel
+                var model = new ServiceViewModel
                 {
                     Name = service.ServiceName,
                     Status = service.Status.ToString(),

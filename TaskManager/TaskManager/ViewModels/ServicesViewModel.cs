@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using TaskManager.Models;
 using TaskManager.Services;
 
 namespace TaskManager.ViewModels
@@ -15,23 +14,23 @@ namespace TaskManager.ViewModels
 
         private CancellationTokenSource linkedTokenSource;
         private Task runningTask;
-        private ServicesModel selectedService;
+        private ServiceViewModel selectedService;
 
         public ServicesViewModel(IServiceManager serviceManager, IErrorDialogService dialogService)
         {
             this.serviceManager = serviceManager;
             this.dialogService = dialogService;
 
-            Services = new ObservableCollection<ServicesModel>();
+            Services = new ObservableCollection<ServiceViewModel>();
 
             StartServiceCommand = new RelayCommand<object>(_ => StartServiceAsync(), _ => CanStartService());
             StopServiceCommand = new RelayCommand<object>(_ => StopServiceAsync(), _ => CanStopService());
             RestartServiceCommand = new RelayCommand<object>(_ => RestartServiceAsync(), _ => CanRestartService());
         }
 
-        public ObservableCollection<ServicesModel> Services { get; }
+        public ObservableCollection<ServiceViewModel> Services { get; }
 
-        public ServicesModel SelectedService
+        public ServiceViewModel SelectedService
         {
             get => selectedService;
             set
