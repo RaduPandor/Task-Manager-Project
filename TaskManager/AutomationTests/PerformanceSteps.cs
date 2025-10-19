@@ -7,7 +7,7 @@ namespace AutomationTests
     [Binding]
     public class PerformanceSteps
     {
-        private readonly PerformanceMetricsService service = new(new NativeMethodsService());
+        private readonly PerformancePage page = new();
         private double cpuUsage;
 
         [Given(@"the Task Manager is running")]
@@ -18,8 +18,7 @@ namespace AutomationTests
         [When(@"I request the CPU usage")]
         public async Task WhenIRequestTheCpuUsage()
         {
-            var process = Process.GetCurrentProcess();
-            cpuUsage = await service.GetCpuUsageAsync(process);
+            cpuUsage = await page.GetCpuUsageAsync();
         }
 
         [Then(@"the value should be between 0 and 100")]
