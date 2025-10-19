@@ -17,8 +17,8 @@ namespace Tests
         public void AppHistoryEmptyCollection()
         {
             var viewModel = new AppHistoryViewModel(mockPerformanceMetricsHelper.Object);
-            Assert.NotNull(viewModel.AppHistory);
-            Assert.Empty(viewModel.AppHistory);
+            Xunit.Assert.NotNull(viewModel.AppHistory);
+            Xunit.Assert.Empty(viewModel.AppHistory);
         }
     }
 }

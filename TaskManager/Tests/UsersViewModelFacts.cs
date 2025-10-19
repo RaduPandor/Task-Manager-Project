@@ -21,9 +21,9 @@ namespace Tests
             var vm = new UsersViewModel(mockPerf.Object, mockProcessProvider.Object);
             await vm.OnNavigatedToAsync(CancellationToken.None);
 
-            Assert.Equal(1, vm.Users.Count);
-            Assert.Equal("testuser", vm.Users[0].UserName);
-            Assert.Equal(2, vm.Users[0].Processes.Count);
+            Xunit.Assert.Equal(1, vm.Users.Count);
+            Xunit.Assert.Equal("testuser", vm.Users[0].UserName);
+            Xunit.Assert.Equal(2, vm.Users[0].Processes.Count);
         }
     }
 }

@@ -8,21 +8,21 @@ namespace Tests
         public void LoadDiskDrivesShouldPopulateDisks()
         {
             var viewModel = new PerformanceViewModel();
-            Assert.NotEmpty(viewModel.Disks);
+            Xunit.Assert.NotEmpty(viewModel.Disks);
         }
 
         [Fact]
         public void LoadNetworkInterfacesShouldPopulateNetworkInterfaces()
         {
             var viewModel = new PerformanceViewModel();
-            Assert.NotEmpty(viewModel.NetworkInterfaces);
+            Xunit.Assert.NotEmpty(viewModel.NetworkInterfaces);
         }
 
         [Fact]
         public void LoadGPUShouldPopulateGPUList()
         {
             var viewModel = new PerformanceViewModel();
-            Assert.NotEmpty(viewModel.GPU);
+            Xunit.Assert.NotEmpty(viewModel.GPU);
         }
     }
 }

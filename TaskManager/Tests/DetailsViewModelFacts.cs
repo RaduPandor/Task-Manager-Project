@@ -19,8 +19,8 @@ namespace Tests
         public void ProcessesShouldBeInitialized()
         {
             var viewModel = new DetailsViewModel(mockPerformanceMetricsHelper.Object);
-            Assert.NotNull(viewModel.Processes);
-            Assert.IsType<ObservableCollection<DetailsInfoViewModel>>(viewModel.Processes);
+            Xunit.Assert.NotNull(viewModel.Processes);
+            Xunit.Assert.IsType<ObservableCollection<DetailsInfoViewModel>>(viewModel.Processes);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Tests
             };
 
             viewModel.Processes.Add(new DetailsInfoViewModel { Name = "TestProcess" });
-            Assert.True(itemAdded);
+            Xunit.Assert.True(itemAdded);
         }
     }
 }

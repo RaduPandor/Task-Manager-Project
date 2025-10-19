@@ -3,31 +3,36 @@ using TaskManager.Services;
 
 namespace Tests
 {
-    public class PerformanceMetricsHelperTests
+    [TestClass]
+    public class PerformanceMetricsServiceTests
     {
-        private readonly PerformanceMetricsService performanceMetricsHelper = new(new NativeMethodsService());
-        [Fact]
-        public async Task GetCpuUsageAsyncReturnsExpectedValue()
+        private readonly PerformanceMetricsService _service = new(new NativeMethodsService());
+
+        [TestMethod]
+        public async Task GetCpuUsageAsync_ShouldReturnValueBetween0And100()
         {
             var process = Process.GetCurrentProcess();
-            var cpuUsage = await performanceMetricsHelper.GetCpuUsageAsync(process);
-            Assert.InRange(cpuUsage, 0, 100);
+            var cpuUsage = await _service.GetCpuUsageAsync(process);
+
+            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(cpuUsage >= 0 && cpuUsage <= 100,
+                $"Expected CPU usage between 0 and 100, but got {cpuUsage}");
         }
 
-        [Fact]
-        public async Task GetNetworkUsageAsyncReturnsExpectedValue()
+        [TestMethod]
+        public async Task GetNetworkUsageAsync_ShouldReturnNonNegativeValue()
         {
-            var networkUsage = await performanceMetricsHelper.GetNetworkUsageAsync();
-            Assert.InRange(networkUsage, 0, double.MaxValue);
+            var networkUsage = await _service.GetNetworkUsageAsync();
+
+            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(networkUsage >= 0, $"Expected non-negative network usage, got {networkUsage}");
         }
 
-        [Fact]
-        public async Task GetDiskUsageAsyncReturnsExpectedValue()
+        [TestMethod]
+        public async Task GetDiskUsageAsync_ShouldReturnNonNegativeValue()
         {
-            var performanceMetricsHelper = new PerformanceMetricsService(new NativeMethodsService());
             var process = Process.GetCurrentProcess();
-            var diskUsage = await performanceMetricsHelper.GetDiskUsageAsync(process);
-            Assert.InRange(diskUsage, 0, double.MaxValue);
+            var diskUsage = await _service.GetDiskUsageAsync(process);
+
+            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsTrue(diskUsage >= 0, $"Expected non-negative disk usage, got {diskUsage}");
         }
     }
 }

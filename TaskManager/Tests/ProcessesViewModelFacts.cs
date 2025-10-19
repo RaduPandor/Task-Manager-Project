@@ -32,7 +32,7 @@ namespace Tests
             };
 
             viewModel.Processes.Add(new ProcessViewModel { Name = "TestProcess" });
-            Assert.True(itemAdded);
+            Xunit.Assert.True(itemAdded);
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace Tests
 
             viewModel.Processes.Add(processModel);
             var item = viewModel.Processes.FirstOrDefault(p => p.Name == "TestProcess");
-            Assert.NotNull(item);
+            Xunit.Assert.NotNull(item);
         }
     }
 }

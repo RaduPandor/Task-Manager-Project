@@ -29,7 +29,7 @@ namespace Tests
 
             var performanceMetricsHelper = new PerformanceMetricsService(mockNativeMethodsService.Object);
             var result = performanceMetricsHelper.GetProcessOwner(123);
-            Assert.Equal("TestUser", result);
+            Xunit.Assert.Equal("TestUser", result);
         }
     }
 }

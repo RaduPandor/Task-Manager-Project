@@ -8,7 +8,7 @@ namespace Tests
         public async Task LoadStartupProgramsAsyncShouldAddStartupPrograms()
         {
             var viewModel = new StartupViewModel();
-            Assert.NotNull(viewModel.StartupPrograms);
+            Xunit.Assert.NotNull(viewModel.StartupPrograms);
         }
     }
 }

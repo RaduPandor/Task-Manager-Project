@@ -33,7 +33,7 @@ namespace Tests
         {
             bool initialVisibility = mainWindowViewModel.IsMenuVisible;
             mainWindowViewModel.ToggleMenuCommand.Execute(null);
-            Assert.NotEqual(initialVisibility, mainWindowViewModel.IsMenuVisible);
+            Xunit.Assert.NotEqual(initialVisibility, mainWindowViewModel.IsMenuVisible);
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace Tests
         {
             mainWindowViewModel.IsMenuVisible = true;
             var width = mainWindowViewModel.MenuColumnWidth;
-            Assert.Equal(new GridLength(150), width);
+            Xunit.Assert.Equal(new GridLength(150), width);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace Tests
         {
             mainWindowViewModel.IsMenuVisible = false;
             var width = mainWindowViewModel.MenuColumnWidth;
-            Assert.Equal(new GridLength(0), width);
+            Xunit.Assert.Equal(new GridLength(0), width);
         }
 
         [Fact]
@@ -71,8 +71,8 @@ namespace Tests
             };
 
             mainWindowViewModel.ToggleMenuCommand.Execute(null);
-            Assert.True(isMenuVisibleChanged);
-            Assert.True(menuColumnWidthChanged);
+            Xunit.Assert.True(isMenuVisibleChanged);
+            Xunit.Assert.True(menuColumnWidthChanged);
         }
     }
 }

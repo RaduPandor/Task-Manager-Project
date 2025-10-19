@@ -19,7 +19,7 @@ namespace Tests
 
             var viewModel = new ServicesViewModel(mockServiceManager.Object, mockDialogService.Object);
 
-            Assert.NotNull(viewModel.Services);
+            Xunit.Assert.NotNull(viewModel.Services);
         }
     }
 }

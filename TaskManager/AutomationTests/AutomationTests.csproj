@@ -1,0 +1,19 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0-windows7.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TaskManager\TaskManager.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Reqnroll.MsTest" Version="3.1.2" />
+	</ItemGroup>
+
+</Project>
