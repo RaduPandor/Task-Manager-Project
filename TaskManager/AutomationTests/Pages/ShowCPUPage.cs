@@ -10,20 +10,23 @@ namespace AutomationTests.Pages
 
         public void LaunchApp()
         {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = @"E:\Git Projects\TaskManager\TaskManager\TaskManager\bin\Debug\net6.0-windows7.0\TaskManager.exe",
-                UseShellExecute = true
-            };
+            var relativePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\TaskManager\bin\Debug\net6.0-windows7.0\TaskManager.exe");
+            var fullPath = Path.GetFullPath(relativePath);
 
-            appProcess = Process.Start(startInfo);
-            Thread.Sleep(2000);
-
-            mainWindow = AutomationElement.FromHandle(appProcess.MainWindowHandle);
-            if (mainWindow == null)
+            if (!File.Exists(fullPath))
             {
-                throw new InvalidOperationException("Failed to find the Task Manager main window.");
+                throw new FileNotFoundException("Task Manager executable not found.", fullPath);
             }
+
+            appProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = fullPath,
+                UseShellExecute = true
+            });
+
+            Thread.Sleep(2000);
+            mainWindow = AutomationElement.FromHandle(appProcess.MainWindowHandle)
+                ?? throw new InvalidOperationException("Failed to find the Task Manager main window.");
         }
 
         public void ClickPerformanceButton() => ClickButtonByAutomationId("PerformanceButton", "PerformanceButton");
