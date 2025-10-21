@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using TaskManager.Services;
 
-namespace AutomationTests
+namespace AutomationTests.Pages
 {
-    public class PerformancePage
+    public class CPUUsagePage
     {
         private readonly PerformanceMetricsService service = new(new NativeMethodsService());
 

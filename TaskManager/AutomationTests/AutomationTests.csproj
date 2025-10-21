@@ -1,4 +1,4 @@
-<Project Sdk="MSTest.Sdk/3.6.4">
+﻿<Project Sdk="MSTest.Sdk/3.6.4">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0-windows7.0</TargetFramework>
@@ -7,6 +7,14 @@
 		<Nullable>enable</Nullable>
 		<IsTestProject>true</IsTestProject>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <ReqnrollFeatureFiles Remove="PerformanceCPU.feature" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Features\ShowCPU.feature" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\TaskManager\TaskManager.csproj" />

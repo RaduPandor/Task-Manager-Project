@@ -45,7 +45,8 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Vertical" Margin="8,0,10,0">
-                <TextBlock>
+                <TextBlock AutomationProperties.AutomationId="CpuUsageLabel"
+                           AutomationProperties.Name="{Binding LatestCPUModel.CpuUsage, StringFormat={}{0}%}">
                     <Run Text="Utilization: " />
                     <Run Text="{Binding LatestCPUModel.CpuUsage, StringFormat={}{0}%}" />
                 </TextBlock>

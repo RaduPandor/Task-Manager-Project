@@ -11,14 +11,14 @@
 #region Designer generated code
 #pragma warning disable
 using Reqnroll;
-namespace AutomationTests
+namespace AutomationTests.Features
 {
     
     
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "3.0.0.0")]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute()]
-    public partial class PerformanceMetricsFeature
+    public partial class CPUUsageTestFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
@@ -27,9 +27,9 @@ namespace AutomationTests
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "", "Performance Metrics", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "CPU Usage Test", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags, InitializeCucumberMessages());
         
-#line 1 "Performance.feature"
+#line 1 "CPUUsage.feature"
 #line hidden
         
         public virtual Microsoft.VisualStudio.TestTools.UnitTesting.TestContext TestContext
@@ -117,12 +117,12 @@ namespace AutomationTests
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Performance.feature.ndjson", 3);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/CPUUsage.feature.ndjson", 3);
         }
         
         [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("Check CPU usage")]
         [global::Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("Check CPU usage")]
-        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Performance Metrics")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "CPU Usage Test")]
         public async global::System.Threading.Tasks.Task CheckCPUUsage()
         {
             string[] tagsOfScenario = ((string[])(null));

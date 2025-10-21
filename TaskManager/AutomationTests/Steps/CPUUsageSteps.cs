@@ -1,13 +1,12 @@
-﻿using Reqnroll;
-using TaskManager.Services;
-using System.Diagnostics;
+﻿using AutomationTests.Pages;
+using Reqnroll;
 
-namespace AutomationTests
+namespace AutomationTests.Steps
 {
     [Binding]
-    public class PerformanceSteps
+    public class CPUUsageSteps
     {
-        private readonly PerformancePage page = new();
+        private readonly CPUUsagePage page = new();
         private double cpuUsage;
 
         [Given(@"the Task Manager is running")]

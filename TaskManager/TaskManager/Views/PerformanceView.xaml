@@ -38,41 +38,48 @@
         <TextBlock Text="Performance" FontSize="14" FontWeight="Bold" Margin="10" FontFamily="Bahnschrift SemiBold SemiCondensed" Grid.Row="0"/>
         <StackPanel Width="150" DockPanel.Dock="Left" HorizontalAlignment="Left" Grid.Column="0" Grid.Row="1">
             <StackPanel.Resources>
-                <Style TargetType="RadioButton" BasedOn="{StaticResource CategoryButtons}"/>
+                <Style TargetType="RadioButton" BasedOn="{StaticResource AutomationButtons}"/>
             </StackPanel.Resources>
-            <RadioButton Command="{Binding ShowCPU}" Margin="0,3,0,0">
+            <Button Command="{Binding ShowCPU}" Margin="0,3,0,0" 
+                         AutomationProperties.AutomationId="CPUButton"
+                         AutomationProperties.Name="CPU"
+                         Style="{StaticResource AutomationButtons}">
                 <TextBlock Text="CPU" VerticalAlignment="Center" Margin="5,4,0,0"/>
-            </RadioButton>
-            <RadioButton Command="{Binding ShowMemory}">
+            </Button>
+            <Button Command="{Binding ShowMemory}"
+                    Style="{StaticResource AutomationButtons}">
                 <TextBlock Text="Memory" VerticalAlignment="Center" Margin="5,4,0,0"/>
-            </RadioButton>
+            </Button>
             <ItemsControl ItemsSource="{Binding Disks}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton Command="{Binding DataContext.ShowDisk, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                         CommandParameter="{Binding DeviceId}">
+                        <Button Command="{Binding DataContext.ShowDisk, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding DeviceId}"
+                                Style="{StaticResource AutomationButtons}">
                             <TextBlock Text="{Binding DisplayName}" Margin="5,4,0,0"/>
-                        </RadioButton>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <ItemsControl ItemsSource="{Binding NetworkInterfaces}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton Command="{Binding DataContext.ShowNetwork, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                         CommandParameter="{Binding NetworkId}">
+                        <Button Command="{Binding DataContext.ShowNetwork, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding NetworkId}"
+                                Style="{StaticResource AutomationButtons}">
                             <TextBlock Text="{Binding DisplayName}" Margin="5,4,0,0"/>
-                        </RadioButton>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <ItemsControl ItemsSource="{Binding GPU}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <RadioButton Command="{Binding DataContext.ShowGPU, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                         CommandParameter="{Binding DeviceId}">
+                        <Button Command="{Binding DataContext.ShowGPU, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding DeviceId}"
+                                Style="{StaticResource AutomationButtons}">
                             <TextBlock Text="{Binding DisplayName}" Margin="5,4,0,0"/>
-                        </RadioButton>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

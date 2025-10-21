@@ -17,11 +17,19 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="AutomationButtons" TargetType="Button">
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Width" Value="150"/>
+        <Setter Property="Height" Value="35"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#E0E0E0"/>
-            </Trigger>
-            <Trigger Property="IsChecked" Value="True">
                 <Setter Property="Background" Value="#E0E0E0"/>
             </Trigger>
         </Style.Triggers>

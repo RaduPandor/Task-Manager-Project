@@ -1,4 +1,4 @@
-﻿Feature: Performance Metrics
+﻿Feature: CPU Usage Test
 
   Scenario: Check CPU usage
     Given the Task Manager is running

@@ -74,29 +74,32 @@
             </StackPanel>
             <StackPanel Width="150" Background="WhiteSmoke" DockPanel.Dock="Left" HorizontalAlignment="Left" Grid.Column="1">
                 <StackPanel.Resources>
-                    <Style TargetType="RadioButton" BasedOn="{StaticResource CategoryButtons}"/>
+                    <Style TargetType="Button" BasedOn="{StaticResource AutomationButtons}"/>
                 </StackPanel.Resources>
-                <RadioButton Command="{Binding ShowProcesses}" Margin="0,40,0,0">
+                <Button Command="{Binding ShowProcesses}" Margin="0,40,0,0">
                     <TextBlock Text="Processes" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowPerformance}">
+                </Button>
+                <Button Command="{Binding ShowPerformance}" 
+                        AutomationProperties.AutomationId="PerformanceButton"
+                        AutomationProperties.Name="Performance">
                     <TextBlock Text="Performance" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowAppHistory}">
+                </Button>
+
+                <Button Command="{Binding ShowAppHistory}">
                     <TextBlock Text="App History" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowStartup}">
+                </Button>
+                <Button Command="{Binding ShowStartup}">
                     <TextBlock Text="Startup apps" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowUsers}">
+                </Button>
+                <Button Command="{Binding ShowUsers}">
                     <TextBlock Text="Users" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowDetails}">
+                </Button>
+                <Button Command="{Binding ShowDetails}">
                     <TextBlock Text="Details" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
-                <RadioButton Command="{Binding ShowServices}">
+                </Button>
+                <Button Command="{Binding ShowServices}">
                     <TextBlock Text="Services" VerticalAlignment="Center" Margin="5,4,0,0"/>
-                </RadioButton>
+                </Button>
             </StackPanel>
             <Grid Background="White" Grid.Column="2">
                 <ContentControl Content="{Binding CurrentView}"/>
