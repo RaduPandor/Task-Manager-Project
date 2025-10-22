@@ -1,12 +1,37 @@
 ﻿using System.Diagnostics;
 using System.Windows.Automation;
+using System.Windows.Input;
 
 namespace AutomationTests.Pages
 {
-    public class ShowCPUPage
+    public class TaskManagerPage
     {
         private Process? appProcess;
         private AutomationElement? mainWindow;
+
+        private void ClickButtonByAutomationId(string automationId, string friendlyName)
+        {
+            var element = mainWindow.FindFirst(
+                TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.AutomationIdProperty, automationId))
+                ?? throw new InvalidOperationException($"{friendlyName} not found.");
+
+            ClickElement(element);
+            Thread.Sleep(2000);
+        }
+
+
+        private void ClickElement(AutomationElement element)
+        {
+            if (element.TryGetCurrentPattern(InvokePattern.Pattern, out var pattern))
+            {
+                ((InvokePattern)pattern).Invoke();
+            }
+            else
+            {
+                throw new InvalidOperationException("Element does not support InvokePattern.");
+            }
+        }
 
         public void LaunchApp()
         {
@@ -33,30 +58,6 @@ namespace AutomationTests.Pages
 
         public void ClickCpuButton() => ClickButtonByAutomationId("CPUButton", "CPUButton");
 
-        private void ClickButtonByAutomationId(string automationId, string friendlyName)
-        {
-            var element = mainWindow.FindFirst(
-                TreeScope.Descendants,
-                new PropertyCondition(AutomationElement.AutomationIdProperty, automationId))
-                ?? throw new InvalidOperationException($"{friendlyName} not found.");
-
-            ClickElement(element);
-            Thread.Sleep(2000);
-        }
-
-
-        private void ClickElement(AutomationElement element)
-        {
-            if (element.TryGetCurrentPattern(InvokePattern.Pattern, out var pattern))
-            {
-                ((InvokePattern)pattern).Invoke();
-            }
-            else
-            {
-                throw new InvalidOperationException("Element does not support InvokePattern.");
-            }
-        }
-
         public double GetCpuUsage()
         {
             var cpuLabel = mainWindow.FindFirst(
@@ -73,5 +74,9 @@ namespace AutomationTests.Pages
             throw new InvalidOperationException($"CPU usage invalid value: '{text}'");
         }
 
+        public void CloseApp()
+        {
+            appProcess.Kill();
+        }
     }
 }

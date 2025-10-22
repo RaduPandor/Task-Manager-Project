@@ -6,7 +6,7 @@ namespace AutomationTests.Steps
     [Binding]
     public class ShowCPUSteps
     {
-        private readonly ShowCPUPage page = new();
+        private readonly TaskManagerPage page = new();
 
         [Given(@"the Task Manager is open")]
         public void GivenTheTaskManagerIsOpen() => page.LaunchApp();
@@ -25,6 +25,9 @@ namespace AutomationTests.Steps
             Assert.IsTrue(cpuUsage >= 0 && cpuUsage <= 100,
                 $"Expected CPU usage between 0 and 100, but got {cpuUsage}");
         }
+
+        [AfterScenario]
+        public void Cleanup() => page.CloseApp();
     }
 
 }
