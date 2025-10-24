@@ -76,7 +76,11 @@ namespace AutomationTests.Pages
 
         public void CloseApp()
         {
-            appProcess.Kill();
+            if (appProcess != null && !appProcess.HasExited)
+            {
+                appProcess.Kill();
+                appProcess = null;
+            }
         }
     }
 }
